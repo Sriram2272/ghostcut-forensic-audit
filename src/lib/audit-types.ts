@@ -110,38 +110,150 @@ export interface AuditResult {
 }
 
 // ═══════════════════════════════════════════
-// SEVERITY-WEIGHTED TRUST SCORE
+// STRICTLY COMPUTED TRUST SCORE
+// Formula: 100 - (Contradicted% × 1.5) - (Unverifiable% × 0.5)
+// Clamped between 0 and 100.
 // ═══════════════════════════════════════════
 
-const SEVERITY_WEIGHTS: Record<HallucinationSeverity, number> = {
-  critical: 3.0,
-  moderate: 1.5,
-  minor: 0.5,
-};
+export interface StrictAuditStats {
+  total: number;
+  supported: number;
+  contradicted: number;
+  unverifiable: number;
+  sourceConflict: number;
+  /** Percentages that sum to exactly 100% (adjusted for rounding) */
+  percentages: {
+    supported: number;
+    contradicted: number;
+    unverifiable: number;
+    sourceConflict: number;
+  };
+  /** Whether rounding adjustment was applied */
+  roundingAdjusted: boolean;
+  trustScore: number;
+  riskLevel: "LOW" | "MEDIUM" | "HIGH";
+  riskReason: string;
+  hasCriticalContradiction: boolean;
+  insufficient: boolean;
+}
 
 /**
- * Compute a trust score weighted by hallucination severity.
- * Critical errors hurt 3× more than minor ones.
+ * Compute percentages that are guaranteed to sum to exactly 100%.
+ * Uses largest-remainder method to distribute rounding error.
  */
-export function computeWeightedTrustScore(sentences: AuditSentence[]): number {
-  if (sentences.length === 0) return 100;
-
-  const maxPenalty = sentences.length * SEVERITY_WEIGHTS.critical; // worst case
-  let totalPenalty = 0;
-
-  for (const s of sentences) {
-    if (s.status === "contradicted" && s.severity) {
-      totalPenalty += SEVERITY_WEIGHTS[s.severity.level];
-    } else if (s.status === "unverifiable") {
-      totalPenalty += 0.3; // minor penalty for unverifiable
-    } else if (s.status === "source_conflict") {
-      totalPenalty += 0.8; // moderate penalty — not the model's fault but still uncertain
-    }
-    // supported = 0 penalty
+function computeExactPercentages(
+  counts: { supported: number; contradicted: number; unverifiable: number; sourceConflict: number },
+  total: number
+): { percentages: { supported: number; contradicted: number; unverifiable: number; sourceConflict: number }; adjusted: boolean } {
+  if (total === 0) {
+    return { percentages: { supported: 0, contradicted: 0, unverifiable: 0, sourceConflict: 0 }, adjusted: false };
   }
 
-  const score = Math.round(Math.max(0, Math.min(100, 100 * (1 - totalPenalty / maxPenalty) )));
-  return score;
+  const keys = ["supported", "contradicted", "unverifiable", "sourceConflict"] as const;
+  const rawPcts = keys.map((k) => (counts[k] / total) * 100);
+  const floored = rawPcts.map(Math.floor);
+  const remainders = rawPcts.map((r, i) => r - floored[i]);
+
+  let roundedSum = floored.reduce((a, b) => a + b, 0);
+  const diff = 100 - roundedSum;
+
+  // Distribute remaining points to entries with largest remainders
+  const indices = keys.map((_, i) => i).sort((a, b) => remainders[b] - remainders[a]);
+  for (let i = 0; i < diff; i++) {
+    floored[indices[i]]++;
+  }
+
+  const result = { supported: floored[0], contradicted: floored[1], unverifiable: floored[2], sourceConflict: floored[3] };
+  const adjusted = diff > 0;
+  return { percentages: result, adjusted };
+}
+
+/**
+ * Compute trust score using the strict formula:
+ * Trust Score = 100 - (Contradicted% × 1.5) - (Unverifiable% × 0.5)
+ * Clamped between 0 and 100.
+ */
+export function computeWeightedTrustScore(sentences: AuditSentence[]): number {
+  const stats = computeStrictAuditStats(sentences);
+  return stats.trustScore;
+}
+
+/**
+ * Compute all strictly-derived audit statistics from claim verdicts.
+ * Every number is computed, never hardcoded.
+ */
+export function computeStrictAuditStats(sentences: AuditSentence[]): StrictAuditStats {
+  const total = sentences.length;
+
+  if (total === 0) {
+    return {
+      total: 0,
+      supported: 0,
+      contradicted: 0,
+      unverifiable: 0,
+      sourceConflict: 0,
+      percentages: { supported: 0, contradicted: 0, unverifiable: 0, sourceConflict: 0 },
+      roundingAdjusted: false,
+      trustScore: 0,
+      riskLevel: "LOW",
+      riskReason: "Insufficient data to compute",
+      hasCriticalContradiction: false,
+      insufficient: true,
+    };
+  }
+
+  const supported = sentences.filter((s) => s.status === "supported").length;
+  const contradicted = sentences.filter((s) => s.status === "contradicted").length;
+  const unverifiable = sentences.filter((s) => s.status === "unverifiable").length;
+  const sourceConflict = sentences.filter((s) => s.status === "source_conflict").length;
+
+  const counts = { supported, contradicted, unverifiable, sourceConflict };
+  const { percentages, adjusted } = computeExactPercentages(counts, total);
+
+  // Exact (non-rounded) percentages for formula precision
+  const exactContradictedPct = (contradicted / total) * 100;
+  const exactUnverifiablePct = (unverifiable / total) * 100;
+
+  // Trust Score = 100 - (Contradicted% × 1.5) - (Unverifiable% × 0.5)
+  const rawScore = 100 - (exactContradictedPct * 1.5) - (exactUnverifiablePct * 0.5);
+  const trustScore = Math.round(Math.max(0, Math.min(100, rawScore)));
+
+  // Check for any CRITICAL severity contradiction
+  const hasCriticalContradiction = sentences.some(
+    (s) => s.status === "contradicted" && s.severity?.level === "critical"
+  );
+
+  // Rule-based risk assessment
+  let riskLevel: "LOW" | "MEDIUM" | "HIGH";
+  let riskReason: string;
+
+  if (hasCriticalContradiction || exactContradictedPct >= 30) {
+    riskLevel = "HIGH";
+    riskReason = hasCriticalContradiction
+      ? `Critical severity contradiction detected (${contradicted} contradicted of ${total} claims, ${percentages.contradicted}%)`
+      : `Contradicted claims ≥ 30% (${percentages.contradicted}% of ${total} claims)`;
+  } else if (exactContradictedPct >= 10) {
+    riskLevel = "MEDIUM";
+    riskReason = `Contradicted claims between 10–29% (${percentages.contradicted}% of ${total} claims)`;
+  } else {
+    riskLevel = "LOW";
+    riskReason = `Contradicted claims < 10% (${percentages.contradicted}% of ${total} claims)`;
+  }
+
+  return {
+    total,
+    supported,
+    contradicted,
+    unverifiable,
+    sourceConflict,
+    percentages,
+    roundingAdjusted: adjusted,
+    trustScore,
+    riskLevel,
+    riskReason,
+    hasCriticalContradiction,
+    insufficient: false,
+  };
 }
 
 // MOCK_AUDIT_RESULT has been removed.

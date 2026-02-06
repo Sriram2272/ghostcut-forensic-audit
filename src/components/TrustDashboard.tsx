@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -8,11 +8,19 @@ import {
   AlertTriangle,
   Activity,
   TrendingDown,
+  Info,
+  X,
 } from "lucide-react";
 import type { AuditSentence } from "@/lib/audit-types";
+import { computeStrictAuditStats } from "@/lib/audit-types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TrustDashboardProps {
-  score: number;
   sentences: AuditSentence[];
   auditDurationMs: number;
 }
@@ -45,35 +53,19 @@ const RISK_EXPLANATIONS: Record<string, string> = {
     "If uncorrected, unverified claims could erode trust, damage credibility, and lead to uninformed decision-making.",
 };
 
-const TrustDashboard = ({ score, sentences, auditDurationMs }: TrustDashboardProps) => {
-  const counts = useMemo(() => {
-    const total = sentences.length;
-    const supported = sentences.filter((s) => s.status === "supported").length;
-    const contradicted = sentences.filter((s) => s.status === "contradicted").length;
-    const unverifiable = sentences.filter((s) => s.status === "unverifiable").length;
-    const sourceConflict = sentences.filter((s) => s.status === "source_conflict").length;
-    return { total, supported, contradicted, unverifiable, sourceConflict };
-  }, [sentences]);
+const RISK_LEVEL_STYLE = {
+  LOW: { label: "LOW RISK", color: "text-verified", bg: "bg-verified/12 border-verified/30", icon: ShieldCheck },
+  MEDIUM: { label: "MEDIUM RISK", color: "text-warning", bg: "bg-warning/12 border-warning/30", icon: AlertTriangle },
+  HIGH: { label: "HIGH RISK", color: "text-destructive", bg: "bg-destructive/12 border-destructive/30", icon: ShieldAlert },
+};
 
-  const percentages = useMemo(() => {
-    if (counts.total === 0) return { supported: 0, contradicted: 0, unverifiable: 0, sourceConflict: 0 };
-    return {
-      supported: Math.round((counts.supported / counts.total) * 100),
-      contradicted: Math.round((counts.contradicted / counts.total) * 100),
-      unverifiable: Math.round((counts.unverifiable / counts.total) * 100),
-      sourceConflict: Math.round((counts.sourceConflict / counts.total) * 100),
-    };
-  }, [counts]);
+const TrustDashboard = ({ sentences, auditDurationMs }: TrustDashboardProps) => {
+  const [formulaOpen, setFormulaOpen] = useState(false);
 
+  const stats = useMemo(() => computeStrictAuditStats(sentences), [sentences]);
   const riskDomains = useMemo(() => detectRiskDomains(sentences), [sentences]);
-
-  const riskLevel = useMemo(() => {
-    if (score >= 80) return { label: "LOW RISK", color: "text-verified", bg: "bg-verified/12 border-verified/30", icon: ShieldCheck };
-    if (score >= 50) return { label: "MEDIUM RISK", color: "text-warning", bg: "bg-warning/12 border-warning/30", icon: AlertTriangle };
-    return { label: "HIGH RISK", color: "text-destructive", bg: "bg-destructive/12 border-destructive/30", icon: ShieldAlert };
-  }, [score]);
-
-  const RiskIcon = riskLevel.icon;
+  const riskStyle = RISK_LEVEL_STYLE[stats.riskLevel];
+  const RiskIcon = riskStyle.icon;
 
   // Format audit duration
   const auditTimeLabel = useMemo(() => {
@@ -83,25 +75,37 @@ const TrustDashboard = ({ score, sentences, auditDurationMs }: TrustDashboardPro
 
   // Score gauge
   const circumference = 2 * Math.PI * 54;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+  const strokeDashoffset = circumference - (stats.trustScore / 100) * circumference;
 
   const getStrokeColor = () => {
-    if (score >= 80) return "hsl(var(--verified))";
-    if (score >= 50) return "hsl(var(--warning))";
+    if (stats.trustScore >= 80) return "hsl(var(--verified))";
+    if (stats.trustScore >= 50) return "hsl(var(--warning))";
     return "hsl(var(--destructive))";
   };
 
   const getScoreColor = () => {
-    if (score >= 80) return "text-verified";
-    if (score >= 50) return "text-warning";
+    if (stats.trustScore >= 80) return "text-verified";
+    if (stats.trustScore >= 50) return "text-warning";
     return "text-destructive";
   };
 
   const getGlowClass = () => {
-    if (score >= 80) return "glow-green";
-    if (score >= 50) return "glow-amber";
+    if (stats.trustScore >= 80) return "glow-green";
+    if (stats.trustScore >= 50) return "glow-amber";
     return "glow-red";
   };
+
+  if (stats.insufficient) {
+    return (
+      <div className="space-y-4 animate-fade-in-up">
+        <div className="p-5 rounded-xl bg-card border-2 border-border text-center">
+          <AlertTriangle className="w-8 h-8 text-warning mx-auto mb-3" />
+          <p className="text-sm font-mono font-bold text-foreground">Insufficient data to compute</p>
+          <p className="text-xs font-mono text-muted-foreground mt-1">No claims have been analyzed yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 animate-fade-in-up">
@@ -123,12 +127,7 @@ const TrustDashboard = ({ score, sentences, auditDurationMs }: TrustDashboardPro
         {/* Gauge */}
         <div className={`relative w-32 h-32 mx-auto ${getGlowClass()} rounded-full`}>
           <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-            <circle
-              cx="60" cy="60" r="54"
-              fill="none"
-              stroke="hsl(var(--border))"
-              strokeWidth="8"
-            />
+            <circle cx="60" cy="60" r="54" fill="none" stroke="hsl(var(--border))" strokeWidth="8" />
             <circle
               cx="60" cy="60" r="54"
               fill="none"
@@ -142,101 +141,159 @@ const TrustDashboard = ({ score, sentences, auditDurationMs }: TrustDashboardPro
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className={`text-3xl font-extrabold font-mono ${getScoreColor()}`}>
-              {score}
+              {stats.trustScore}
             </span>
             <span className="text-[9px] text-muted-foreground font-mono mt-0.5">/ 100</span>
           </div>
         </div>
 
         {/* Verdict badge */}
-        <div className={`flex items-center justify-center gap-2 mt-3 px-3 py-1.5 rounded-lg border ${riskLevel.bg}`}>
-          <RiskIcon className={`w-4 h-4 ${riskLevel.color}`} />
-          <span className={`text-[10px] font-mono font-extrabold tracking-widest ${riskLevel.color}`}>
-            {riskLevel.label}
+        <div className={`flex items-center justify-center gap-2 mt-3 px-3 py-1.5 rounded-lg border ${riskStyle.bg}`}>
+          <RiskIcon className={`w-4 h-4 ${riskStyle.color}`} />
+          <span className={`text-[10px] font-mono font-extrabold tracking-widest ${riskStyle.color}`}>
+            {riskStyle.label}
           </span>
         </div>
+
+        {/* Risk reason */}
+        <p className="text-[10px] font-mono text-muted-foreground text-center mt-2 leading-relaxed">
+          {stats.riskReason}
+        </p>
+
+        {/* "How this is calculated" tooltip */}
+        <div className="flex justify-center mt-2">
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setFormulaOpen(!formulaOpen)}
+                  className="flex items-center gap-1 text-[9px] font-mono text-primary/70 hover:text-primary transition-colors"
+                >
+                  <Info className="w-3 h-3" />
+                  How this is calculated
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs p-3">
+                <FormulaExplanation />
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        {/* Expandable formula panel */}
+        {formulaOpen && (
+          <div className="mt-3 p-3 rounded-lg bg-muted/60 border border-border animate-fade-in-up relative">
+            <button
+              onClick={() => setFormulaOpen(false)}
+              className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3 h-3" />
+            </button>
+            <FormulaExplanation />
+          </div>
+        )}
       </div>
 
-      {/* ═══ CONFIDENCE METER ═══ */}
+      {/* ═══ CONFIDENCE DISTRIBUTION ═══ */}
       <div className="p-4 rounded-xl bg-card border-2 border-border">
         <div className="flex items-center gap-2 mb-3">
           <Activity className="w-3.5 h-3.5 text-primary" />
           <span className="text-[10px] font-mono font-extrabold tracking-widest uppercase text-muted-foreground">
-            Confidence Distribution
+            Verdict Distribution
           </span>
         </div>
 
-        {/* Stacked bar */}
+        {/* Stacked bar — proportional to actual percentages */}
         <div className="relative w-full h-5 rounded-full overflow-hidden bg-muted border border-border">
           <div className="absolute inset-0 flex">
-            {percentages.supported > 0 && (
+            {stats.percentages.supported > 0 && (
               <div
                 className="h-full bg-verified transition-all duration-700 ease-out"
-                style={{ width: `${percentages.supported}%` }}
+                style={{ width: `${stats.percentages.supported}%` }}
               />
             )}
-            {percentages.contradicted > 0 && (
+            {stats.percentages.contradicted > 0 && (
               <div
                 className="h-full bg-destructive transition-all duration-700 ease-out"
-                style={{ width: `${percentages.contradicted}%` }}
+                style={{ width: `${stats.percentages.contradicted}%` }}
               />
             )}
-            {percentages.unverifiable > 0 && (
+            {stats.percentages.unverifiable > 0 && (
               <div
                 className="h-full bg-warning transition-all duration-700 ease-out"
-                style={{ width: `${percentages.unverifiable}%` }}
+                style={{ width: `${stats.percentages.unverifiable}%` }}
               />
             )}
-            {percentages.sourceConflict > 0 && (
+            {stats.percentages.sourceConflict > 0 && (
               <div
                 className="h-full bg-conflict transition-all duration-700 ease-out"
-                style={{ width: `${percentages.sourceConflict}%` }}
+                style={{ width: `${stats.percentages.sourceConflict}%` }}
               />
             )}
           </div>
         </div>
+
+        {/* Rounding notice */}
+        {stats.roundingAdjusted && (
+          <p className="text-[8px] font-mono text-muted-foreground/60 mt-1 text-right">
+            * Percentages adjusted by ±1% to sum to exactly 100%
+          </p>
+        )}
 
         {/* Legend */}
         <div className="grid grid-cols-2 gap-2 mt-3">
           <BreakdownRow
             icon={<ShieldCheck className="w-3 h-3 text-verified" />}
             label="Supported"
-            count={counts.supported}
-            pct={percentages.supported}
+            count={stats.supported}
+            pct={stats.percentages.supported}
             color="text-verified"
           />
           <BreakdownRow
             icon={<ShieldAlert className="w-3 h-3 text-destructive" />}
             label="Contradicted"
-            count={counts.contradicted}
-            pct={percentages.contradicted}
+            count={stats.contradicted}
+            pct={stats.percentages.contradicted}
             color="text-destructive"
           />
           <BreakdownRow
             icon={<ShieldQuestion className="w-3 h-3 text-warning" />}
             label="Unverifiable"
-            count={counts.unverifiable}
-            pct={percentages.unverifiable}
+            count={stats.unverifiable}
+            pct={stats.percentages.unverifiable}
             color="text-warning"
           />
           <BreakdownRow
             icon={<GitCompareArrows className="w-3 h-3 text-conflict" />}
             label="Conflicts"
-            count={counts.sourceConflict}
-            pct={percentages.sourceConflict}
+            count={stats.sourceConflict}
+            pct={stats.percentages.sourceConflict}
             color="text-conflict"
           />
         </div>
+
+        {/* Sum verification */}
+        <div className="mt-2 pt-2 border-t border-border flex items-center justify-between">
+          <span className="text-[9px] font-mono text-muted-foreground">Total</span>
+          <span className="text-[9px] font-mono font-bold text-foreground">
+            {stats.total} claims · {stats.percentages.supported + stats.percentages.contradicted + stats.percentages.unverifiable + stats.percentages.sourceConflict}%
+          </span>
+        </div>
       </div>
 
-      {/* ═══ RISK EXPLANATION ═══ */}
-      {counts.contradicted > 0 && (
+      {/* ═══ RISK ASSESSMENT ═══ */}
+      {stats.contradicted > 0 && (
         <div className="p-4 rounded-xl border-2 border-destructive/25 bg-destructive/5">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="w-4 h-4 text-destructive" />
             <span className="text-[10px] font-mono font-extrabold tracking-widest uppercase text-destructive">
               Risk Assessment
             </span>
+            {stats.hasCriticalContradiction && (
+              <span className="px-1.5 py-0.5 rounded bg-destructive/20 border border-destructive/30 text-[8px] font-mono font-extrabold text-destructive tracking-wider">
+                CRITICAL
+              </span>
+            )}
           </div>
           <div className="space-y-2">
             {riskDomains.map((domain) => (
@@ -255,7 +312,7 @@ const TrustDashboard = ({ score, sentences, auditDurationMs }: TrustDashboardPro
       <div className="p-3 rounded-lg bg-muted/50 border border-border">
         <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
           <span>Claims analyzed</span>
-          <span className="font-bold text-foreground">{counts.total}</span>
+          <span className="font-bold text-foreground">{stats.total}</span>
         </div>
         <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mt-1">
           <span>Sources referenced</span>
@@ -277,6 +334,37 @@ const TrustDashboard = ({ score, sentences, auditDurationMs }: TrustDashboardPro
     </div>
   );
 };
+
+// ═══ FORMULA EXPLANATION ═══
+const FormulaExplanation = () => (
+  <div className="space-y-2.5 text-[10px] font-mono">
+    <div>
+      <p className="font-extrabold text-foreground tracking-wider uppercase mb-1">Trust Score Formula</p>
+      <div className="px-2 py-1.5 rounded bg-muted border border-border">
+        <code className="text-[9px] text-primary">
+          Score = 100 − (Contradicted% × 1.5) − (Unverifiable% × 0.5)
+        </code>
+      </div>
+      <p className="text-muted-foreground mt-1 leading-relaxed">
+        Clamped between 0 and 100. Contradictions penalized 3× more than unverifiable claims.
+      </p>
+    </div>
+    <div>
+      <p className="font-extrabold text-foreground tracking-wider uppercase mb-1">Risk Classification</p>
+      <div className="space-y-1 text-muted-foreground">
+        <p><span className="text-destructive font-bold">HIGH</span> → Any CRITICAL contradiction OR contradicted ≥ 30%</p>
+        <p><span className="text-warning font-bold">MEDIUM</span> → Contradicted between 10–29%</p>
+        <p><span className="text-verified font-bold">LOW</span> → Contradicted &lt; 10%</p>
+      </div>
+    </div>
+    <div>
+      <p className="font-extrabold text-foreground tracking-wider uppercase mb-1">Percentages</p>
+      <p className="text-muted-foreground leading-relaxed">
+        Each % = (count ÷ total) × 100. Largest-remainder rounding ensures all percentages sum to exactly 100%.
+      </p>
+    </div>
+  </div>
+);
 
 // ═══ BREAKDOWN ROW ═══
 const BreakdownRow = ({

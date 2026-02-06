@@ -9,7 +9,6 @@ import ClaimGraphView from "@/components/ClaimGraphView";
 import VerificationScopeBanner from "@/components/VerificationScopeBanner";
 import VerificationPolicy from "@/components/VerificationPolicy";
 import { AuditEmptyState } from "@/components/HighlightedText";
-import { computeWeightedTrustScore } from "@/lib/audit-types";
 import type { AuditResult } from "@/lib/audit-types";
 import { ingestDocuments, InMemoryVectorIndex } from "@/lib/document-pipeline";
 import { runVerification } from "@/lib/verification-engine";
@@ -108,10 +107,7 @@ const Index = () => {
     });
   }, []);
 
-  const weightedScore = useMemo(
-    () => (auditResult ? computeWeightedTrustScore(auditResult.sentences) : 0),
-    [auditResult]
-  );
+  // Trust score is now computed internally by TrustDashboard via computeStrictAuditStats
 
   const selectedSentence = useMemo(
     () => auditResult?.sentences.find((s) => s.id === selectedSentenceId) ?? null,
@@ -262,7 +258,6 @@ const Index = () => {
         {showStats && (
           <div className="w-1/4 border-l-2 border-border overflow-y-auto p-4 bg-card/50 animate-slide-in-right">
             <TrustDashboard
-              score={weightedScore}
               sentences={auditResult.sentences}
               auditDurationMs={auditDurationMs}
             />
