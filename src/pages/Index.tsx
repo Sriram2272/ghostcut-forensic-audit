@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import Layout from "@/components/Layout";
 import AuditInput from "@/components/AuditInput";
 import DocumentUpload from "@/components/DocumentUpload";
 import SentenceViewer from "@/components/SentenceViewer";
 import SourceViewer from "@/components/SourceViewer";
-import TrustScore from "@/components/TrustScore";
+import TrustDashboard from "@/components/TrustDashboard";
 import ClaimGraphView from "@/components/ClaimGraphView";
 import { AuditEmptyState } from "@/components/HighlightedText";
 import { MOCK_AUDIT_RESULT, computeWeightedTrustScore } from "@/lib/audit-types";
@@ -20,12 +20,16 @@ const Index = () => {
   const [selectedSentenceId, setSelectedSentenceId] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("split");
+  const [auditDurationMs, setAuditDurationMs] = useState(0);
+  const auditStartRef = useRef<number>(0);
 
   const canAudit = llmText.trim().length > 0 && files.length > 0;
 
   const handleAudit = useCallback(() => {
     setIsAuditing(true);
+    auditStartRef.current = Date.now();
     setTimeout(() => {
+      setAuditDurationMs(Date.now() - auditStartRef.current);
       setAuditComplete(true);
       setIsAuditing(false);
       setSelectedSentenceId(null);
@@ -188,12 +192,10 @@ const Index = () => {
         {/* STATS PANEL (optional) */}
         {showStats && (
           <div className="w-1/4 border-l-2 border-border overflow-y-auto p-4 bg-card/50 animate-slide-in-right">
-            <TrustScore
+            <TrustDashboard
               score={weightedScore}
-              totalClaims={counts.total}
-              verifiedClaims={counts.supported}
-              hallucinatedClaims={counts.contradicted}
-              unverifiableClaims={counts.unverifiable}
+              sentences={result.sentences}
+              auditDurationMs={auditDurationMs}
             />
           </div>
         )}
