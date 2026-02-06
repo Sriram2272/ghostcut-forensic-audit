@@ -256,7 +256,7 @@ const SentenceViewer = ({
                     )}
 
                     <span className="text-[10px] font-mono text-muted-foreground">
-                      {(sentence.confidence * 100).toFixed(0)}%
+                      {(sentence.confidence.low * 100).toFixed(0)}–{(sentence.confidence.high * 100).toFixed(0)}%
                     </span>
                     {sentence.evidenceIds.length > 0 && (
                       <span className="text-[10px] font-mono text-primary">
@@ -269,6 +269,18 @@ const SentenceViewer = ({
                   {/* Reasoning (visible when selected) */}
                   {isSelected && (
                     <div className="mt-3 pt-2 border-t border-border/50 animate-fade-in-up">
+                      {/* Confidence explanation */}
+                      {sentence.confidence.explanation && (
+                        <div className="mb-2 px-2 py-1.5 rounded bg-primary/5 border border-primary/15">
+                          <p className="text-[10px] font-mono font-bold text-primary uppercase tracking-widest mb-0.5">
+                            Confidence {(sentence.confidence.low * 100).toFixed(0)}–{(sentence.confidence.high * 100).toFixed(0)}%
+                          </p>
+                          <p className="text-[11px] text-foreground/75 leading-relaxed italic">
+                            {sentence.confidence.explanation}
+                          </p>
+                        </div>
+                      )}
+
                       <p className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest mb-1">
                         Reasoning
                       </p>

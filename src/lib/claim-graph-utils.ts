@@ -12,7 +12,8 @@ export interface ClaimNode {
   text: string;
   originalStatus: SentenceStatus;
   effectiveStatus: ClaimNodeStatus;
-  confidence: number;
+  confidenceLow: number;
+  confidenceHigh: number;
   x: number;
   y: number;
   dependsOn: string[]; // upstream claim IDs
@@ -60,7 +61,8 @@ export function buildClaimGraph(sentences: AuditSentence[]): ClaimGraph {
     text: s.text,
     originalStatus: s.status,
     effectiveStatus: s.status,
-    confidence: s.confidence,
+    confidenceLow: s.confidence.low,
+    confidenceHigh: s.confidence.high,
     x: 0,
     y: 0,
     dependsOn: DEPENDENCY_MAP[s.id] || [],

@@ -11,18 +11,24 @@ interface ClaimRequest {
   evidenceChunks: { documentName: string; chunkText: string; chunkId: string }[];
 }
 
+interface ConfidenceRange {
+  low: number;
+  high: number;
+  explanation?: string;
+}
+
 interface VerificationResult {
   verdict: "supported" | "contradicted" | "unverifiable";
-  confidence: number;
+  confidence: ConfidenceRange;
   reasoning: string;
   nli: {
     verdict: "supported" | "contradicted" | "unverifiable";
-    confidence: number;
+    confidence: ConfidenceRange;
     reasoning: string;
   };
   judge: {
     verdict: "supported" | "contradicted" | "unverifiable";
-    confidence: number;
+    confidence: ConfidenceRange;
     reasoning: string;
   };
 }
@@ -50,7 +56,6 @@ serve(async (req) => {
       );
     }
 
-    // Process claims in batches to avoid rate limits
     const BATCH_SIZE = 3;
     const results: (VerificationResult | { error: string })[] = [];
 
@@ -61,7 +66,6 @@ serve(async (req) => {
       );
       results.push(...batchResults);
 
-      // Small delay between batches to avoid rate limiting
       if (i + BATCH_SIZE < claims.length) {
         await new Promise((r) => setTimeout(r, 500));
       }
@@ -104,15 +108,25 @@ CRITICAL RULES:
 - You may ONLY use the provided evidence. Do NOT use any external knowledge.
 - If no evidence is provided or evidence is irrelevant, the verdict MUST be "unverifiable".
 - If the evidence partially matches but key facts (numbers, dates, names) differ, the verdict MUST be "contradicted".
-- Confidence scores must reflect your actual certainty (0.0 to 1.0).
-- Do NOT fabricate or hallucinate evidence that is not in the provided text.`;
+- Do NOT fabricate or hallucinate evidence that is not in the provided text.
+- NEVER return 1.0 or 100% confidence. Maximum allowed is 0.98.
+
+CONFIDENCE RANGE RULES:
+- Return confidence as a RANGE (low and high bounds), not a single number.
+- The range width reflects your uncertainty. A narrow range (e.g., 0.91–0.96) means high certainty. A wide range (e.g., 0.40–0.75) means significant uncertainty.
+- confidence_low must always be less than confidence_high.
+- Neither value can be 1.0. Maximum is 0.98.
+- Minimum is 0.05.
+- Always provide a confidence_explanation that explains WHY you chose this confidence level.
+- For high confidence (>0.85), explain what specific evidence feature drives the certainty (e.g., "Explicit negation found in source document", "Exact numeric match across two sources").
+- For low confidence, explain what is uncertain (e.g., "Evidence is tangentially related but does not directly address the claim").`;
 
   const userPrompt = `CLAIM: "${claim.claim}"
 
 EVIDENCE:
 ${evidenceText}
 
-Analyze this claim against the evidence using both NLI classification and judicial reasoning.`;
+Analyze this claim against the evidence using both NLI classification and judicial reasoning. Provide confidence as ranges with explanations.`;
 
   try {
     const response = await fetch(
@@ -135,68 +149,86 @@ Analyze this claim against the evidence using both NLI classification and judici
               function: {
                 name: "submit_verification",
                 description:
-                  "Submit the NLI and judge verification results for this claim.",
+                  "Submit the NLI and judge verification results for this claim with confidence ranges.",
                 parameters: {
                   type: "object",
                   properties: {
                     nli_verdict: {
                       type: "string",
                       enum: ["supported", "contradicted", "unverifiable"],
-                      description:
-                        "NLI classification: does the evidence entail, contradict, or fail to address the claim?",
                     },
-                    nli_confidence: {
+                    nli_confidence_low: {
                       type: "number",
-                      description:
-                        "NLI confidence score from 0.0 to 1.0 based on evidence strength.",
+                      description: "Lower bound of NLI confidence (0.05–0.98).",
+                    },
+                    nli_confidence_high: {
+                      type: "number",
+                      description: "Upper bound of NLI confidence (0.05–0.98). Must be > nli_confidence_low.",
+                    },
+                    nli_confidence_explanation: {
+                      type: "string",
+                      description: "Why this NLI confidence level? Reference specific evidence features.",
                     },
                     nli_reasoning: {
                       type: "string",
-                      description:
-                        "Brief NLI explanation of the entailment/contradiction/neutrality relationship.",
+                      description: "Brief NLI explanation of the entailment/contradiction/neutrality.",
                     },
                     judge_verdict: {
                       type: "string",
                       enum: ["supported", "contradicted", "unverifiable"],
-                      description:
-                        "Judge verdict after considering all evidence holistically.",
                     },
-                    judge_confidence: {
+                    judge_confidence_low: {
                       type: "number",
-                      description:
-                        "Judge confidence score from 0.0 to 1.0.",
+                      description: "Lower bound of judge confidence (0.05–0.98).",
+                    },
+                    judge_confidence_high: {
+                      type: "number",
+                      description: "Upper bound of judge confidence (0.05–0.98). Must be > judge_confidence_low.",
+                    },
+                    judge_confidence_explanation: {
+                      type: "string",
+                      description: "Why this judge confidence level? Reference specific evidence features.",
                     },
                     judge_reasoning: {
                       type: "string",
-                      description:
-                        "Detailed judicial reasoning explaining the verdict, referencing specific evidence.",
+                      description: "Detailed judicial reasoning referencing specific evidence.",
                     },
                     final_verdict: {
                       type: "string",
                       enum: ["supported", "contradicted", "unverifiable"],
-                      description:
-                        "Final combined verdict considering both NLI and judge analysis.",
                     },
-                    final_confidence: {
+                    final_confidence_low: {
                       type: "number",
-                      description:
-                        "Final confidence score from 0.0 to 1.0.",
+                      description: "Lower bound of combined confidence (0.05–0.98).",
+                    },
+                    final_confidence_high: {
+                      type: "number",
+                      description: "Upper bound of combined confidence (0.05–0.98). Must be > final_confidence_low.",
+                    },
+                    final_confidence_explanation: {
+                      type: "string",
+                      description: "Explain what drives the final confidence (e.g. 'Explicit negation found in source document').",
                     },
                     final_reasoning: {
                       type: "string",
-                      description:
-                        "Final reasoning synthesizing NLI and judge perspectives.",
+                      description: "Final reasoning synthesizing NLI and judge perspectives.",
                     },
                   },
                   required: [
                     "nli_verdict",
-                    "nli_confidence",
+                    "nli_confidence_low",
+                    "nli_confidence_high",
+                    "nli_confidence_explanation",
                     "nli_reasoning",
                     "judge_verdict",
-                    "judge_confidence",
+                    "judge_confidence_low",
+                    "judge_confidence_high",
+                    "judge_confidence_explanation",
                     "judge_reasoning",
                     "final_verdict",
-                    "final_confidence",
+                    "final_confidence_low",
+                    "final_confidence_high",
+                    "final_confidence_explanation",
                     "final_reasoning",
                   ],
                   additionalProperties: false,
@@ -235,21 +267,30 @@ Analyze this claim against the evidence using both NLI classification and judici
 
     const args = JSON.parse(toolCall.function.arguments);
 
-    // Clamp confidence values
-    const clamp = (v: number) => Math.max(0, Math.min(1, v));
+    // Clamp and validate confidence ranges
+    const clampConf = (v: number) => Math.max(0.05, Math.min(0.98, v || 0));
+    const buildRange = (low: number, high: number, explanation?: string): ConfidenceRange => {
+      const lo = clampConf(low);
+      const hi = clampConf(high);
+      return {
+        low: Math.min(lo, hi),
+        high: Math.max(lo, hi),
+        explanation: explanation || undefined,
+      };
+    };
 
     return {
       verdict: args.final_verdict,
-      confidence: clamp(args.final_confidence),
+      confidence: buildRange(args.final_confidence_low, args.final_confidence_high, args.final_confidence_explanation),
       reasoning: args.final_reasoning,
       nli: {
         verdict: args.nli_verdict,
-        confidence: clamp(args.nli_confidence),
+        confidence: buildRange(args.nli_confidence_low, args.nli_confidence_high, args.nli_confidence_explanation),
         reasoning: args.nli_reasoning,
       },
       judge: {
         verdict: args.judge_verdict,
-        confidence: clamp(args.judge_confidence),
+        confidence: buildRange(args.judge_confidence_low, args.judge_confidence_high, args.judge_confidence_explanation),
         reasoning: args.judge_reasoning,
       },
     };
