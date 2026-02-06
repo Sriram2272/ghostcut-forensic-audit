@@ -53,14 +53,21 @@ const DEPENDENCY_MAP: Record<string, string[]> = {
 };
 
 /**
- * Generate a short (6-8 word) summary from a claim's full text.
+ * Generate a short (3-5 word) title from a claim's full text.
+ * Avoids truncation — picks the most meaningful short phrase.
  */
 function generateShortSummary(text: string): string {
-  // Take first meaningful clause, truncate to ~8 words
   const cleaned = text.replace(/["""]/g, "").trim();
-  const words = cleaned.split(/\s+/);
-  if (words.length <= 8) return cleaned;
-  return words.slice(0, 7).join(" ") + "…";
+  // Try to extract a concise subject-verb phrase
+  // Remove leading filler like "The company", "According to"
+  const simplified = cleaned
+    .replace(/^(According to[^,]*,\s*)/i, "")
+    .replace(/^(The\s+)/i, "")
+    .replace(/^(It\s+is\s+)/i, "");
+  const words = simplified.split(/\s+/);
+  if (words.length <= 5) return simplified;
+  // Take first 4-5 words, ensuring we end on a whole word
+  return words.slice(0, 4).join(" ");
 }
 
 /**
@@ -179,10 +186,10 @@ export function buildClaimGraph(sentences: AuditSentence[]): ClaimGraph {
     byDepth.get(d)!.push(node);
   }
 
-  // Assign positions
-  const PADDING_X = 220;
-  const PADDING_Y = 100;
-  const OFFSET_X = 100;
+  // Assign positions — generous spacing for readability
+  const PADDING_X = 300;
+  const PADDING_Y = 130;
+  const OFFSET_X = 140;
   const OFFSET_Y = 60;
 
   for (let depth = 0; depth <= maxDepth; depth++) {
