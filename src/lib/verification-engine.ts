@@ -367,15 +367,15 @@ export async function runVerification(
         id,
         text,
         status: "unverifiable",
-        confidence: { low: 0, high: 0, explanation: "Verification model was unavailable — no confidence could be computed." },
-        reasoning: `Verification model unavailable: ${modelResult.error}. This claim has NOT been verified — no result was fabricated.`,
+        confidence: { low: 0, high: 0, explanation: "Verification model was unavailable — no confidence could be computed. This is not a judgment on the claim itself." },
+        reasoning: `Verification model unavailable: ${modelResult.error}. This claim has NOT been verified — no result was fabricated. The uploaded source documents were not consulted due to model failure.`,
         evidenceIds: retrieval.evidenceIds,
         retrievedEvidence: retrieval.retrievedEvidence,
         verification: {
           results: [],
           consensus: false,
           finalVerdict: "unverifiable",
-          disagreementNote: `Model error: ${modelResult.error}`,
+          disagreementNote: `Model error: ${modelResult.error}. No verdict was fabricated.`,
         },
       });
       continue;
@@ -434,7 +434,7 @@ export async function runVerification(
         ? { low: 0.90, high: 0.98, explanation: `Numeric mismatch detected: ${numericDetail}` }
         : claimNumbers.length > 0 && sourceNumbers.length > 0
           ? { low: 0.85, high: 0.95, explanation: "Numeric values are consistent between claim and source." }
-          : { low: 0, high: 0, explanation: "No numeric claims to verify." },
+          : { low: 0, high: 0, explanation: "No numeric data found in source documents to compare against." },
       reasoning:
         claimNumbers.length === 0
           ? "No numeric claims to verify."
@@ -442,7 +442,7 @@ export async function runVerification(
             ? `Numeric mismatch: ${numericDetail}`
             : sourceNumbers.length > 0
               ? "Numeric values are consistent between claim and source."
-              : "Claim contains numbers but no matching numeric context found in sources.",
+              : "Claim contains numbers but the uploaded source documents do not contain any matching numeric context. No evidence was fabricated.",
       modelName: "NumericChecker v2",
     };
 

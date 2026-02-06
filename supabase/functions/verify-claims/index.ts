@@ -111,6 +111,15 @@ CRITICAL RULES:
 - Do NOT fabricate or hallucinate evidence that is not in the provided text.
 - NEVER return 1.0 or 100% confidence. Maximum allowed is 0.98.
 
+UNVERIFIABLE CLASSIFICATION RULES (STRICT):
+- A claim is UNVERIFIABLE only when the source documents are COMPLETELY SILENT on the topic.
+- Do NOT classify a claim as "unverifiable" if there is partial evidence — use "supported" or "contradicted" instead.
+- Do NOT use ambiguous labels like "partial reference", "partial evidence", or "weak match" in your reasoning.
+- For UNVERIFIABLE claims, the reasoning MUST clearly state that the uploaded source documents do not contain any information about this topic.
+- For UNVERIFIABLE claims, confidence refers to CERTAINTY THAT THE SOURCE IS SILENT, not that the claim is false.
+- Example confidence explanation for UNVERIFIABLE: "High confidence that the source documents do not address this claim."
+- Do NOT auto-correct, downgrade to contradicted, or fabricate evidence for UNVERIFIABLE claims.
+
 CONFIDENCE RANGE RULES:
 - Return confidence as a RANGE (low and high bounds), not a single number.
 - The range width reflects your uncertainty. A narrow range (e.g., 0.91–0.96) means high certainty. A wide range (e.g., 0.40–0.75) means significant uncertainty.

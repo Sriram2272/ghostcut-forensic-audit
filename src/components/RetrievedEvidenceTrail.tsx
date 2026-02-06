@@ -11,14 +11,17 @@ const RetrievedEvidenceTrail = ({ evidence, status }: RetrievedEvidenceTrailProp
     return (
       <div className="mt-3 pt-2 border-t border-border/30">
         <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle className="w-3.5 h-3.5 text-warning" />
-          <span className="text-[10px] font-mono font-extrabold tracking-widest text-warning uppercase">
-            No Evidence Retrieved
+          <AlertTriangle className="w-3.5 h-3.5 text-warning/80" />
+          <span className="text-[10px] font-mono font-extrabold tracking-widest text-warning/80 uppercase">
+            No Direct Evidence Found in Source Documents
           </span>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          No document chunk exceeded the similarity threshold. This claim cannot be verified against uploaded sources.
-          No external knowledge or hallucinated evidence was used.
+          The uploaded source documents do not contain any information about this topic.
+          No external knowledge was consulted and no evidence was fabricated.
+        </p>
+        <p className="text-[10px] font-mono text-warning/70 mt-1.5 font-bold">
+          Recommended action: Human review required.
         </p>
       </div>
     );
