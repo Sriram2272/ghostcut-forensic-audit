@@ -3,7 +3,7 @@ import ThemeToggle from "./ThemeToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
-  onAudit?: () => void;
+  onAudit?: () => void | Promise<void>;
   canAudit?: boolean;
   isAuditing?: boolean;
 }
