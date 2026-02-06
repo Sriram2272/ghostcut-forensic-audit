@@ -39,6 +39,8 @@
     --verified-foreground: 0 0% 100%;
     --warning: 42 100% 50%;
     --warning-foreground: 220 25% 10%;
+    --conflict: 270 70% 55%;
+    --conflict-foreground: 0 0% 100%;
 
     --border: 220 18% 86%;
     --input: 220 18% 88%;
@@ -104,6 +106,8 @@
     --verified-foreground: 230 25% 7%;
     --warning: 42 100% 55%;
     --warning-foreground: 230 25% 7%;
+    --conflict: 270 85% 65%;
+    --conflict-foreground: 0 0% 100%;
 
     --border: 230 16% 18%;
     --input: 230 16% 16%;
@@ -168,6 +172,10 @@
   .glow-amber {
     box-shadow: 0 0 20px -5px hsl(var(--warning) / 0.5),
                 0 0 40px -10px hsl(var(--warning) / 0.2);
+  }
+  .glow-purple {
+    box-shadow: 0 0 20px -5px hsl(var(--conflict) / 0.5),
+                0 0 40px -10px hsl(var(--conflict) / 0.2);
   }
 
   /* ═══ HAZARD STRIPE ═══ */
