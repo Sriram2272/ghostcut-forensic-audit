@@ -6,9 +6,12 @@ import type { AuditSentence, SentenceStatus } from "./audit-types";
 
 export type ClaimNodeStatus = SentenceStatus | "cascade";
 
+export type EdgeRelation = "depends_on" | "derived_from" | "assumes";
+
 export interface ClaimNode {
   id: string;
   label: string; // e.g. "C1"
+  shortSummary: string; // max 6-8 word summary for display
   text: string;
   originalStatus: SentenceStatus;
   effectiveStatus: ClaimNodeStatus;
@@ -18,12 +21,14 @@ export interface ClaimNode {
   y: number;
   dependsOn: string[]; // upstream claim IDs
   cascadeSource?: string; // if cascade, which contradicted node caused it
+  isRootCause: boolean; // contradicted node with downstream dependents
 }
 
 export interface ClaimEdge {
   from: string;
   to: string;
   isCascade: boolean; // true if this edge propagates a contradiction
+  relation: EdgeRelation; // human-readable edge label
 }
 
 export interface ClaimGraph {
@@ -48,6 +53,32 @@ const DEPENDENCY_MAP: Record<string, string[]> = {
 };
 
 /**
+ * Generate a short (6-8 word) summary from a claim's full text.
+ */
+function generateShortSummary(text: string): string {
+  // Take first meaningful clause, truncate to ~8 words
+  const cleaned = text.replace(/["""]/g, "").trim();
+  const words = cleaned.split(/\s+/);
+  if (words.length <= 8) return cleaned;
+  return words.slice(0, 7).join(" ") + "…";
+}
+
+/**
+ * Infer the edge relationship type based on the nature of the dependency.
+ */
+function inferEdgeRelation(fromId: string, toId: string): EdgeRelation {
+  // Heuristic: root nodes are "depends_on", derived data is "derived_from",
+  // and claims that presuppose another are "assumes"
+  const assumptionPairs = new Set(["s6-s3", "s10-s6", "s11-s4"]);
+  const derivedPairs = new Set(["s4-s1", "s4-s5", "s6-s2", "s11-s1"]);
+  
+  const key = `${toId}-${fromId}`;
+  if (assumptionPairs.has(key)) return "assumes";
+  if (derivedPairs.has(key)) return "derived_from";
+  return "depends_on";
+}
+
+/**
  * Build a claim dependency graph from audit sentences.
  * Propagates contradictions through dependency chains.
  */
@@ -58,6 +89,7 @@ export function buildClaimGraph(sentences: AuditSentence[]): ClaimGraph {
   const nodes: ClaimNode[] = sentences.map((s, i) => ({
     id: s.id,
     label: `C${i + 1}`,
+    shortSummary: generateShortSummary(s.text),
     text: s.text,
     originalStatus: s.status,
     effectiveStatus: s.status,
@@ -66,6 +98,7 @@ export function buildClaimGraph(sentences: AuditSentence[]): ClaimGraph {
     x: 0,
     y: 0,
     dependsOn: DEPENDENCY_MAP[s.id] || [],
+    isRootCause: false, // will be computed after cascade propagation
   }));
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
@@ -75,7 +108,12 @@ export function buildClaimGraph(sentences: AuditSentence[]): ClaimGraph {
   for (const node of nodes) {
     for (const depId of node.dependsOn) {
       if (nodeMap.has(depId)) {
-        edges.push({ from: depId, to: node.id, isCascade: false });
+        edges.push({
+          from: depId,
+          to: node.id,
+          isCascade: false,
+          relation: inferEdgeRelation(depId, node.id),
+        });
       }
     }
   }
@@ -118,6 +156,14 @@ export function buildClaimGraph(sentences: AuditSentence[]): ClaimGraph {
         const edge = edges.find((e) => e.from === currentId && e.to === childId);
         if (edge) edge.isCascade = true;
       }
+    }
+  }
+
+  // Identify root cause claims: contradicted nodes that have downstream dependents
+  for (const node of contradicted) {
+    const hasDownstream = downstream.has(node.id) && (downstream.get(node.id)!.length > 0);
+    if (hasDownstream) {
+      node.isRootCause = true;
     }
   }
 
