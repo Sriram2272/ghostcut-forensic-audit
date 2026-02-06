@@ -76,7 +76,6 @@ export default {
         },
         ghost: {
           glow: "hsl(var(--ghost-glow))",
-          "glow-muted": "hsl(var(--ghost-glow-muted))",
         },
         surface: {
           elevated: "hsl(var(--surface-elevated))",

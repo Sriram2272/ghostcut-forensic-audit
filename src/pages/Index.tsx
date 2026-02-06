@@ -5,9 +5,8 @@ import DocumentUpload from "@/components/DocumentUpload";
 import AuditResults, { type Claim } from "@/components/AuditResults";
 import TrustScore from "@/components/TrustScore";
 import HighlightedText, { AuditEmptyState } from "@/components/HighlightedText";
-import { FileText } from "lucide-react";
+import { FileText, RotateCcw, Scissors } from "lucide-react";
 
-// Mock audit data for demonstration
 const MOCK_CLAIMS: Claim[] = [
   {
     id: "1",
@@ -26,7 +25,7 @@ const MOCK_CLAIMS: Claim[] = [
     status: "hallucinated",
     confidence: 0.88,
     reasoning:
-      "The financial report for Q3 2025 shows revenue of $34.2M, not $50M. This is a significant factual discrepancy.",
+      "The financial report for Q3 2025 shows revenue of $34.2M, not $50M. This is a significant factual discrepancy that could mislead stakeholders.",
     sourceExcerpt: "Q3 2025 Revenue: $34,200,000 (up 12% YoY)",
     sourceDocument: "financial-report-q3-2025.pdf",
   },
@@ -55,7 +54,7 @@ const MOCK_CLAIMS: Claim[] = [
     status: "hallucinated",
     confidence: 0.96,
     reasoning:
-      "No mention of NASA or any space-related partnership exists in any uploaded document. This appears to be a fabricated claim.",
+      "No mention of NASA or any space-related partnership exists in any uploaded document. This appears to be a fabricated claim with no evidentiary basis.",
   },
   {
     id: "6",
@@ -83,15 +82,21 @@ const Index = () => {
   const [auditComplete, setAuditComplete] = useState(false);
   const [claims, setClaims] = useState<Claim[]>([]);
 
+  const canAudit = llmText.trim().length > 0 && files.length > 0;
+
   const handleAudit = useCallback(() => {
     setIsAuditing(true);
-    // Simulate audit processing
     setTimeout(() => {
       setClaims(MOCK_CLAIMS);
       setAuditComplete(true);
       setIsAuditing(false);
     }, 2500);
   }, []);
+
+  const handleReset = () => {
+    setAuditComplete(false);
+    setClaims([]);
+  };
 
   const verifiedCount = claims.filter((c) => c.status === "verified").length;
   const hallucinatedCount = claims.filter((c) => c.status === "hallucinated").length;
@@ -101,118 +106,132 @@ const Index = () => {
     : 0;
 
   return (
-    <Layout>
-      <div className="px-4 sm:px-6 py-6 max-w-[1440px] mx-auto">
-        {/* Tagline bar */}
-        <div className="mb-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gradient-to-r from-primary/30 to-transparent" />
-          <p className="text-xs font-mono text-primary tracking-widest uppercase shrink-0">
-            Cutting hallucinations out of AI
-          </p>
-          <div className="h-px flex-1 bg-gradient-to-l from-primary/30 to-transparent" />
-        </div>
+    <Layout
+      onAudit={!auditComplete ? handleAudit : undefined}
+      canAudit={canAudit}
+      isAuditing={isAuditing}
+    >
+      <div className="px-4 sm:px-6 py-6 pb-14 max-w-[1440px] mx-auto">
+        {/* Mobile audit button (visible on small screens) */}
+        {!auditComplete && (
+          <div className="sm:hidden mb-4">
+            <button
+              onClick={handleAudit}
+              disabled={!canAudit || isAuditing}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-destructive text-destructive-foreground font-bold text-sm tracking-wide transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed glow-red"
+            >
+              {isAuditing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
+                  AUDITING…
+                </>
+              ) : (
+                <>
+                  <Scissors className="w-4 h-4" />
+                  RUN AUDIT
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
         {!auditComplete ? (
-          /* INPUT MODE */
+          /* ═══ INPUT MODE ═══ */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: LLM Text Input */}
-            <div className="p-5 rounded-xl bg-card border border-border">
-              <AuditInput
-                text={llmText}
-                onTextChange={setLlmText}
-                onAudit={handleAudit}
-                isAuditing={isAuditing}
-                hasDocuments={files.length > 0}
-              />
+            <div className="p-5 rounded-xl bg-card border-2 border-border">
+              <AuditInput text={llmText} onTextChange={setLlmText} />
             </div>
 
-            {/* Right: Document Upload + Instructions */}
+            {/* Right: Documents + Empty state */}
             <div className="space-y-6">
-              <div className="p-5 rounded-xl bg-card border border-border">
+              <div className="p-5 rounded-xl bg-card border-2 border-border">
                 <DocumentUpload files={files} onFilesChange={setFiles} />
               </div>
-
               <AuditEmptyState />
             </div>
           </div>
         ) : (
-          /* RESULTS MODE */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left: Highlighted text + Claims */}
-            <div className="lg:col-span-8 space-y-6">
-              {/* Highlighted original text */}
-              <div className="p-5 rounded-xl bg-card border border-border">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground">
-                      Annotated Output
-                    </h3>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setAuditComplete(false);
-                      setClaims([]);
-                    }}
-                    className="text-xs font-mono text-primary hover:text-primary/80 transition-colors"
-                  >
-                    ← New Audit
-                  </button>
-                </div>
-                <HighlightedText text={llmText} highlights={MOCK_HIGHLIGHTS} />
-
-                {/* Legend */}
-                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
-                  <LegendItem
-                    color="bg-verified/30 border-verified/40"
-                    label="Verified"
-                  />
-                  <LegendItem
-                    color="bg-destructive/30 border-destructive/40"
-                    label="Hallucinated"
-                  />
-                  <LegendItem
-                    color="bg-warning/30 border-warning/40"
-                    label="Unverifiable"
-                  />
-                </div>
+          /* ═══ RESULTS MODE ═══ */
+          <div className="space-y-6">
+            {/* Results header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-px w-8 bg-destructive" />
+                <h2 className="text-sm font-mono font-extrabold text-destructive uppercase tracking-widest">
+                  Audit Complete — Results Below
+                </h2>
+                <div className="h-px flex-1 bg-destructive/30" />
               </div>
-
-              {/* Claims breakdown */}
-              <div className="p-5 rounded-xl bg-card border border-border">
-                <AuditResults claims={claims} originalText={llmText} />
-              </div>
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border text-sm font-semibold text-foreground hover:bg-accent transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                New Audit
+              </button>
             </div>
 
-            {/* Right: Trust Score */}
-            <div className="lg:col-span-4 space-y-4">
-              <TrustScore
-                score={trustScore}
-                totalClaims={claims.length}
-                verifiedClaims={verifiedCount}
-                hallucinatedClaims={hallucinatedCount}
-                unverifiableClaims={unverifiableCount}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left: Annotated text + Claims */}
+              <div className="lg:col-span-8 space-y-6">
+                {/* Highlighted text */}
+                <div className="p-5 rounded-xl bg-card border-2 border-border">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <h3 className="text-sm font-bold text-foreground uppercase tracking-wide">
+                        Annotated Output
+                      </h3>
+                    </div>
+                  </div>
+                  <HighlightedText text={llmText} highlights={MOCK_HIGHLIGHTS} />
 
-              {/* Source docs sidebar */}
-              <div className="p-4 rounded-xl bg-card border border-border">
-                <h4 className="text-xs font-mono tracking-widest uppercase text-muted-foreground mb-3">
-                  Sources Referenced
-                </h4>
-                <div className="space-y-2">
-                  {["company-profile.pdf", "financial-report-q3-2025.pdf", "hr-summary-2025.pdf"].map(
-                    (doc) => (
+                  {/* Legend */}
+                  <div className="flex flex-wrap items-center gap-4 mt-5 pt-4 border-t-2 border-border">
+                    <LegendItem color="bg-verified/30 border-verified/50" label="Verified" />
+                    <LegendItem color="bg-destructive/30 border-destructive/50" label="Hallucinated" />
+                    <LegendItem color="bg-warning/30 border-warning/50" label="Unverifiable" />
+                  </div>
+                </div>
+
+                {/* Claims */}
+                <div className="p-5 rounded-xl bg-card border-2 border-border">
+                  <AuditResults claims={claims} originalText={llmText} />
+                </div>
+              </div>
+
+              {/* Right: Trust + Sources */}
+              <div className="lg:col-span-4 space-y-4">
+                <TrustScore
+                  score={trustScore}
+                  totalClaims={claims.length}
+                  verifiedClaims={verifiedCount}
+                  hallucinatedClaims={hallucinatedCount}
+                  unverifiableClaims={unverifiableCount}
+                />
+
+                <div className="p-5 rounded-xl bg-card border-2 border-border">
+                  <h4 className="text-[10px] font-mono font-bold tracking-widest uppercase text-muted-foreground mb-3">
+                    Referenced Sources
+                  </h4>
+                  <div className="space-y-2">
+                    {[
+                      "company-profile.pdf",
+                      "financial-report-q3-2025.pdf",
+                      "hr-summary-2025.pdf",
+                    ].map((doc) => (
                       <div
                         key={doc}
-                        className="flex items-center gap-2 px-3 py-2 rounded-md bg-secondary border border-border"
+                        className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-muted border border-border status-bar-verified"
                       >
-                        <FileText className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-mono text-foreground truncate">
+                        <FileText className="w-3.5 h-3.5 text-verified" />
+                        <span className="text-xs font-mono font-semibold text-foreground truncate">
                           {doc}
                         </span>
                       </div>
-                    )
-                  )}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -224,9 +243,11 @@ const Index = () => {
 };
 
 const LegendItem = ({ color, label }: { color: string; label: string }) => (
-  <div className="flex items-center gap-1.5">
-    <div className={`w-3 h-2 rounded-sm ${color} border`} />
-    <span className="text-[10px] font-mono text-muted-foreground">{label}</span>
+  <div className="flex items-center gap-2">
+    <div className={`w-4 h-2.5 rounded-sm ${color} border-2`} />
+    <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-wider">
+      {label}
+    </span>
   </div>
 );
 
