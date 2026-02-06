@@ -183,7 +183,22 @@ const VerifierRow = ({ result }: { result: VerifierResult }) => {
         {/* Confidence */}
         {!isNA && (
           <div className="flex items-center gap-1.5 shrink-0">
-            <div className="w-12 h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="relative w-12 h-1.5 rounded-full bg-muted overflow-hidden">
+              {/* Range band */}
+              <div
+                className={`absolute h-full rounded-full opacity-30 ${
+                  result.verdict === "supported"
+                    ? "bg-verified"
+                    : result.verdict === "contradicted"
+                      ? "bg-destructive"
+                      : "bg-warning"
+                }`}
+                style={{
+                  left: `${result.confidence.low * 100}%`,
+                  width: `${(result.confidence.high - result.confidence.low) * 100}%`,
+                }}
+              />
+              {/* Midpoint bar */}
               <div
                 className={`h-full rounded-full transition-all ${
                   result.verdict === "supported"
@@ -192,11 +207,11 @@ const VerifierRow = ({ result }: { result: VerifierResult }) => {
                       ? "bg-destructive"
                       : "bg-warning"
                 }`}
-                style={{ width: `${result.confidence * 100}%` }}
+                style={{ width: `${((result.confidence.low + result.confidence.high) / 2) * 100}%` }}
               />
             </div>
-            <span className="text-[9px] font-mono text-muted-foreground w-8 text-right">
-              {(result.confidence * 100).toFixed(0)}%
+            <span className="text-[9px] font-mono text-muted-foreground w-14 text-right">
+              {(result.confidence.low * 100).toFixed(0)}–{(result.confidence.high * 100).toFixed(0)}%
             </span>
           </div>
         )}
@@ -204,7 +219,12 @@ const VerifierRow = ({ result }: { result: VerifierResult }) => {
 
       {/* Expanded reasoning */}
       {expanded && !isNA && (
-        <div className="px-3 pb-2.5 pt-0.5 border-t border-border/30">
+        <div className="px-3 pb-2.5 pt-0.5 border-t border-border/30 space-y-1.5">
+          {result.confidence.explanation && (
+            <p className="text-[10px] font-mono text-primary/80 italic leading-relaxed">
+              ⓘ {result.confidence.explanation}
+            </p>
+          )}
           <p className="text-[11px] text-foreground/70 leading-relaxed">
             {result.reasoning}
           </p>

@@ -15,7 +15,7 @@ export interface Claim {
   id: string;
   text: string;
   status: ClaimStatus;
-  confidence: number;
+  confidence: { low: number; high: number; explanation?: string };
   reasoning: string;
   sourceExcerpt?: string;
   sourceDocument?: string;
@@ -132,7 +132,7 @@ const ClaimCard = ({ claim, index }: { claim: Claim; index: number }) => {
               {config.label}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground">
-              {(claim.confidence * 100).toFixed(0)}% confidence
+              {(claim.confidence.low * 100).toFixed(0)}–{(claim.confidence.high * 100).toFixed(0)}% confidence
             </span>
           </div>
         </div>

@@ -434,7 +434,7 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
               {/* Confidence */}
               <div className="flex items-center gap-3">
                 <span className="text-[10px] font-mono text-muted-foreground">
-                  Confidence: {(hoveredNodeData.confidence * 100).toFixed(0)}%
+                  Confidence: {(hoveredNodeData.confidenceLow * 100).toFixed(0)}–{(hoveredNodeData.confidenceHigh * 100).toFixed(0)}%
                 </span>
                 {hoveredNodeData.effectiveStatus === "cascade" && (
                   <span className="text-[10px] font-mono text-destructive font-bold">
@@ -442,12 +442,20 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                   </span>
                 )}
               </div>
-              {/* Confidence bar */}
-              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              {/* Confidence bar (shows range) */}
+              <div className="relative h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="absolute h-full rounded-full transition-all opacity-30"
+                  style={{
+                    left: `${hoveredNodeData.confidenceLow * 100}%`,
+                    width: `${(hoveredNodeData.confidenceHigh - hoveredNodeData.confidenceLow) * 100}%`,
+                    backgroundColor: STATUS_COLORS[hoveredNodeData.effectiveStatus].fill,
+                  }}
+                />
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
-                    width: `${hoveredNodeData.confidence * 100}%`,
+                    width: `${((hoveredNodeData.confidenceLow + hoveredNodeData.confidenceHigh) / 2) * 100}%`,
                     backgroundColor: STATUS_COLORS[hoveredNodeData.effectiveStatus].fill,
                   }}
                 />

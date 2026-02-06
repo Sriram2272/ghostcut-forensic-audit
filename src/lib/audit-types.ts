@@ -6,10 +6,16 @@ export type VerifierType = "nli" | "llm_judge" | "rule_based";
 
 export type VerifierVerdict = "supported" | "contradicted" | "unverifiable" | "not_applicable";
 
+export interface ConfidenceRange {
+  low: number;  // 0–1
+  high: number; // 0–1
+  explanation?: string; // e.g. "Explicit negation found in source document."
+}
+
 export interface VerifierResult {
   verifier: VerifierType;
   verdict: VerifierVerdict;
-  confidence: number; // 0–1
+  confidence: ConfidenceRange;
   reasoning: string;
   modelName: string; // e.g. "RoBERTa-large-MNLI", "GPT-5 Judge", "NumericChecker v2"
 }
@@ -71,7 +77,7 @@ export interface AuditSentence {
   id: string;
   text: string;
   status: SentenceStatus;
-  confidence: number;
+  confidence: ConfidenceRange;
   reasoning: string;
   evidenceIds: string[]; // links to SourceParagraph ids
   retrievedEvidence: RetrievedEvidence[]; // explicit evidence trail from retrieval

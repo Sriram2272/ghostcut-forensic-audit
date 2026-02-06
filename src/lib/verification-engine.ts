@@ -17,6 +17,7 @@ import type {
   HallucinationSeverity,
   LockedCorrection,
   RetrievedEvidence,
+  ConfidenceRange,
 } from "@/lib/audit-types";
 import type { InMemoryVectorIndex, IngestedDocument, SearchResult } from "@/lib/document-pipeline";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,7 +153,7 @@ function retrieveEvidence(
 
 interface ModelVerdict {
   verdict: SentenceStatus;
-  confidence: number;
+  confidence: ConfidenceRange;
   reasoning: string;
   nli: VerifierResult;
   judge: VerifierResult;
@@ -186,7 +187,7 @@ async function callVerificationModel(
     const nli: VerifierResult = {
       verifier: "nli",
       verdict: result.nli.verdict,
-      confidence: result.nli.confidence,
+      confidence: result.nli.confidence as ConfidenceRange,
       reasoning: result.nli.reasoning,
       modelName: "Gemini NLI Classifier",
     };
@@ -194,14 +195,14 @@ async function callVerificationModel(
     const judge: VerifierResult = {
       verifier: "llm_judge",
       verdict: result.judge.verdict,
-      confidence: result.judge.confidence,
+      confidence: result.judge.confidence as ConfidenceRange,
       reasoning: result.judge.reasoning,
       modelName: "Gemini LLM Judge",
     };
 
     return {
       verdict: result.verdict as SentenceStatus,
-      confidence: result.confidence,
+      confidence: result.confidence as ConfidenceRange,
       reasoning: result.reasoning,
       nli,
       judge,
@@ -350,7 +351,7 @@ export async function runVerification(
         id,
         text,
         status: "source_conflict",
-        confidence: 0.6,
+        confidence: { low: 0.35, high: 0.65, explanation: "Sources disagree — confidence reflects inherent ambiguity between conflicting documents." },
         reasoning: `Two source documents provide conflicting information: "${retrieval.sourceConflictDocs?.[0]}" and "${retrieval.sourceConflictDocs?.[1]}". Human review required.`,
         evidenceIds: retrieval.evidenceIds,
         retrievedEvidence: retrieval.retrievedEvidence,
@@ -366,7 +367,7 @@ export async function runVerification(
         id,
         text,
         status: "unverifiable",
-        confidence: 0,
+        confidence: { low: 0, high: 0, explanation: "Verification model was unavailable — no confidence could be computed." },
         reasoning: `Verification model unavailable: ${modelResult.error}. This claim has NOT been verified — no result was fabricated.`,
         evidenceIds: retrieval.evidenceIds,
         retrievedEvidence: retrieval.retrievedEvidence,
@@ -429,7 +430,11 @@ export async function runVerification(
             : sourceNumbers.length > 0
               ? "supported"
               : "unverifiable",
-      confidence: hasNumericConflict ? 0.95 : claimNumbers.length > 0 && sourceNumbers.length > 0 ? 0.9 : 0,
+      confidence: hasNumericConflict
+        ? { low: 0.90, high: 0.98, explanation: `Numeric mismatch detected: ${numericDetail}` }
+        : claimNumbers.length > 0 && sourceNumbers.length > 0
+          ? { low: 0.85, high: 0.95, explanation: "Numeric values are consistent between claim and source." }
+          : { low: 0, high: 0, explanation: "No numeric claims to verify." },
       reasoning:
         claimNumbers.length === 0
           ? "No numeric claims to verify."
@@ -496,7 +501,7 @@ function buildSourceConflictVerification(retrieval: RetrievalResult): MultiModel
       {
         verifier: "nli",
         verdict: "unverifiable",
-        confidence: 0.6,
+        confidence: { low: 0.40, high: 0.65, explanation: "Source documents contain conflicting information — NLI cannot resolve inter-document disagreement." },
         reasoning: "Source documents contain conflicting information — cannot determine entailment.",
         modelName: "Source Conflict Detector",
       },
