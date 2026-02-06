@@ -54,6 +54,7 @@ const Index = () => {
       supported: s.filter((x) => x.status === "supported").length,
       contradicted: s.filter((x) => x.status === "contradicted").length,
       unverifiable: s.filter((x) => x.status === "unverifiable").length,
+      source_conflict: s.filter((x) => x.status === "source_conflict").length,
     };
   }, [result.sentences]);
 

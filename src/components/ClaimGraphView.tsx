@@ -26,6 +26,12 @@ const STATUS_COLORS: Record<ClaimNodeStatus, { fill: string; stroke: string; tex
     text: "hsl(var(--warning-foreground))",
     glow: "0 0 20px hsl(var(--warning) / 0.5)",
   },
+  source_conflict: {
+    fill: "hsl(var(--conflict))",
+    stroke: "hsl(var(--conflict))",
+    text: "hsl(var(--conflict-foreground))",
+    glow: "0 0 20px hsl(var(--conflict) / 0.5)",
+  },
   cascade: {
     fill: "hsl(0 70% 35%)",
     stroke: "hsl(var(--destructive))",
@@ -38,6 +44,7 @@ const STATUS_LABELS: Record<ClaimNodeStatus, string> = {
   supported: "SUPPORTED",
   contradicted: "CONTRADICTED",
   unverifiable: "UNVERIFIABLE",
+  source_conflict: "SOURCE CONFLICT",
   cascade: "CASCADE HALLUCINATION",
 };
 
@@ -153,6 +160,7 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
           <Legend color={STATUS_COLORS.supported.fill} label="Supported" />
           <Legend color={STATUS_COLORS.contradicted.fill} label="Contradicted" />
           <Legend color={STATUS_COLORS.unverifiable.fill} label="Unverifiable" />
+          <Legend color={STATUS_COLORS.source_conflict.fill} label="Source Conflict" />
           <Legend color={STATUS_COLORS.cascade.fill} label={`Cascade (${cascadeCount})`} pulse />
           <div className="ml-auto text-[10px] font-mono text-muted-foreground">
             Scroll to zoom • Drag to pan

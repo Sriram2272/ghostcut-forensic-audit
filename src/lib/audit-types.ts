@@ -1,10 +1,22 @@
-export type SentenceStatus = "supported" | "contradicted" | "unverifiable";
+export type SentenceStatus = "supported" | "contradicted" | "unverifiable" | "source_conflict";
 
 export type HallucinationSeverity = "critical" | "moderate" | "minor";
 
 export interface SeverityInfo {
   level: HallucinationSeverity;
   reasoning: string;
+}
+
+export interface ConflictEvidence {
+  paragraphId: string;
+  documentName: string;
+  excerpt: string;
+}
+
+export interface SourceConflictInfo {
+  explanation: string; // explains the conflict is from sources, not the model
+  evidenceA: ConflictEvidence;
+  evidenceB: ConflictEvidence;
 }
 
 export interface AuditSentence {
@@ -15,6 +27,7 @@ export interface AuditSentence {
   reasoning: string;
   evidenceIds: string[]; // links to SourceParagraph ids
   severity?: SeverityInfo; // only present for contradicted claims
+  sourceConflict?: SourceConflictInfo; // only present for source_conflict claims
 }
 
 export interface SourceParagraph {
@@ -61,6 +74,8 @@ export function computeWeightedTrustScore(sentences: AuditSentence[]): number {
       totalPenalty += SEVERITY_WEIGHTS[s.severity.level];
     } else if (s.status === "unverifiable") {
       totalPenalty += 0.3; // minor penalty for unverifiable
+    } else if (s.status === "source_conflict") {
+      totalPenalty += 0.8; // moderate penalty — not the model's fault but still uncertain
     }
     // supported = 0 penalty
   }
@@ -68,10 +83,6 @@ export function computeWeightedTrustScore(sentences: AuditSentence[]): number {
   const score = Math.round(Math.max(0, Math.min(100, 100 * (1 - totalPenalty / maxPenalty) )));
   return score;
 }
-
-// ═══════════════════════════════════════════
-// MOCK DATA — Rich forensic audit scenario
-// ═══════════════════════════════════════════
 
 export const MOCK_AUDIT_RESULT: AuditResult = {
   trustScore: 33,
@@ -182,6 +193,28 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
         reasoning: "Entirely fabricated institutional endorsement from the WHO — a global health authority. False claims of WHO backing for a medical device constitute fraud and could facilitate illegal market entry.",
       },
     },
+    {
+      id: "s11",
+      text: "Nextera Health's Series B round raised $85 million at a $400 million pre-money valuation.",
+      status: "source_conflict",
+      confidence: 0.60,
+      reasoning:
+        "Two source documents report conflicting information about the Series B round. The corporate filing states $85M at $400M valuation, while the financial disclosure references a $62M raise at $310M valuation. This is a source-level contradiction — the model reported one version accurately, but the sources themselves disagree.",
+      evidenceIds: ["p1-5", "p4-4"],
+      sourceConflict: {
+        explanation: "This contradiction originates from the source documents, not the AI model. The model accurately reported information from one source, but a second source provides conflicting data. Human review is required to determine which source is authoritative.",
+        evidenceA: {
+          paragraphId: "p1-5",
+          documentName: "corporate-filing-2024.pdf",
+          excerpt: "Series B Financing: $85,000,000 raised in October 2022. Pre-money valuation: $400,000,000. Lead investor: Sequoia Capital. Participating investors: Andreessen Horowitz, GV (Google Ventures).",
+        },
+        evidenceB: {
+          paragraphId: "p4-4",
+          documentName: "financial-disclosure-q2-2025.pdf",
+          excerpt: "Historical Financing Summary:\nSeries A (2019): $18M\nSeries B (2022): $62M at $310M pre-money valuation\nSeries C (2024): $145M — terms undisclosed\nTotal equity raised to date: $228.2M",
+        },
+      },
+    },
   ],
   documents: [
     {
@@ -208,6 +241,11 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
           id: "p1-4",
           text: "The company's principal offices are located at 450 Kendall Street, Cambridge, Massachusetts 02142. Additional office locations include San Francisco, CA and Austin, TX.",
           linkedSentenceIds: [],
+        },
+        {
+          id: "p1-5",
+          text: "Series B Financing: $85,000,000 raised in October 2022. Pre-money valuation: $400,000,000. Lead investor: Sequoia Capital. Participating investors: Andreessen Horowitz, GV (Google Ventures).",
+          linkedSentenceIds: ["s11"],
         },
       ],
     },
@@ -284,6 +322,11 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
           id: "p4-3",
           text: "Management Commentary: Revenue growth continues to accelerate driven by new hospital system deployments. We expect to reach profitability by Q4 2026 based on current trajectory. Pipeline expansion into cardiac imaging is on track for initial FDA submission in Q1 2026.",
           linkedSentenceIds: [],
+        },
+        {
+          id: "p4-4",
+          text: "Historical Financing Summary:\nSeries A (2019): $18M\nSeries B (2022): $62M at $310M pre-money valuation\nSeries C (2024): $145M — terms undisclosed\nTotal equity raised to date: $228.2M",
+          linkedSentenceIds: ["s11"],
         },
       ],
     },

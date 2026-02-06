@@ -9,6 +9,8 @@ import {
   AlertTriangle,
   Flame,
   Info,
+  GitCompareArrows,
+  FileWarning,
 } from "lucide-react";
 import type { AuditSentence, SentenceStatus, HallucinationSeverity } from "@/lib/audit-types";
 
@@ -60,6 +62,16 @@ const statusConfig: Record<
     border: "border-warning/25",
     bar: "border-l-[3px] border-l-warning",
     glow: "shadow-[inset_0_0_30px_-12px_hsl(var(--warning)/0.15)]",
+  },
+  source_conflict: {
+    icon: GitCompareArrows,
+    shield: FileWarning,
+    label: "SOURCE CONFLICT",
+    color: "text-[hsl(var(--conflict))]",
+    bg: "bg-[hsl(var(--conflict)/0.08)]",
+    border: "border-[hsl(var(--conflict)/0.25)]",
+    bar: "border-l-[3px] border-l-[hsl(var(--conflict))]",
+    glow: "shadow-[inset_0_0_30px_-12px_hsl(var(--conflict)/0.15)]",
   },
 };
 
@@ -116,6 +128,7 @@ const SentenceViewer = ({
     supported: sentences.filter((s) => s.status === "supported").length,
     contradicted: sentences.filter((s) => s.status === "contradicted").length,
     unverifiable: sentences.filter((s) => s.status === "unverifiable").length,
+    source_conflict: sentences.filter((s) => s.status === "source_conflict").length,
   };
 
   return (
@@ -150,6 +163,14 @@ const SentenceViewer = ({
             color="text-warning"
             bg="bg-warning/10 border-warning/20"
           />
+          {counts.source_conflict > 0 && (
+            <StatusChip
+              count={counts.source_conflict}
+              label="Conflicts"
+              color="text-[hsl(var(--conflict))]"
+              bg="bg-[hsl(var(--conflict)/0.1)] border-[hsl(var(--conflict)/0.2)]"
+            />
+          )}
         </div>
       </div>
 
@@ -210,6 +231,10 @@ const SentenceViewer = ({
                       <SeverityBadge severity={sentence.severity.level} reasoning={sentence.severity.reasoning} />
                     )}
 
+                    {/* Source conflict badge */}
+                    {sentence.status === "source_conflict" && (
+                      <SourceConflictBadge explanation={sentence.sourceConflict?.explanation ?? "Sources provide contradictory information."} />
+                    )}
                     <span className="text-[10px] font-mono text-muted-foreground">
                       {(sentence.confidence * 100).toFixed(0)}%
                     </span>
@@ -240,6 +265,24 @@ const SentenceViewer = ({
                           <p className="text-xs text-foreground/70 leading-relaxed">
                             {sentence.severity.reasoning}
                           </p>
+                        </div>
+                      )}
+
+                      {/* Source conflict explanation */}
+                      {sentence.status === "source_conflict" && sentence.sourceConflict && (
+                        <div className="mt-2 pt-2 border-t border-[hsl(var(--conflict)/0.3)]">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <GitCompareArrows className="w-3.5 h-3.5 text-[hsl(var(--conflict))]" />
+                            <p className="text-[10px] font-mono font-bold text-[hsl(var(--conflict))] uppercase tracking-widest">
+                              Source-Level Conflict
+                            </p>
+                          </div>
+                          <p className="text-xs text-foreground/70 leading-relaxed mb-2">
+                            {sentence.sourceConflict.explanation}
+                          </p>
+                          <div className="text-[10px] font-mono text-muted-foreground">
+                            ⬅ Click to view both sources side-by-side in the right panel
+                          </div>
                         </div>
                       )}
                     </div>
@@ -300,6 +343,46 @@ const SeverityBadge = ({
             </div>
             <p className="text-xs text-foreground/80 leading-relaxed">
               {reasoning}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ═══ SOURCE CONFLICT BADGE WITH HOVER TOOLTIP ═══
+const SourceConflictBadge = ({
+  explanation,
+}: {
+  explanation: string;
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <span
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider border cursor-help text-[hsl(var(--conflict))] bg-[hsl(var(--conflict)/0.12)] border-[hsl(var(--conflict)/0.35)]"
+      >
+        <GitCompareArrows className="w-3 h-3" />
+        SOURCE CONFLICT
+      </span>
+
+      {showTooltip && (
+        <div className="absolute left-0 bottom-full mb-2 z-50 w-80 animate-fade-in-up">
+          <div className="rounded-lg border-2 border-[hsl(var(--conflict)/0.4)] bg-card shadow-2xl p-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <GitCompareArrows className="w-4 h-4 text-[hsl(var(--conflict))]" />
+              <span className="text-[10px] font-mono font-extrabold tracking-widest text-[hsl(var(--conflict))]">
+                NOT A MODEL HALLUCINATION
+              </span>
+            </div>
+            <p className="text-xs text-foreground/80 leading-relaxed">
+              {explanation}
             </p>
           </div>
         </div>

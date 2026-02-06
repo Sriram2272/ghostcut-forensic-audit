@@ -43,6 +43,7 @@ const DEPENDENCY_MAP: Record<string, string[]> = {
   s7: ["s1"],       // EU expansion depends on company existing
   s8: ["s1"],       // Employee count depends on company existing
   s10: ["s6"],      // WHO endorsement depends on clinical accuracy claims
+  s11: ["s1", "s4"], // Series B funding depends on company + financials
 };
 
 /**
