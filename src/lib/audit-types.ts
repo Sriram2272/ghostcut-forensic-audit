@@ -1,5 +1,26 @@
 export type SentenceStatus = "supported" | "contradicted" | "unverifiable" | "source_conflict";
 
+// ═══ MULTI-MODEL VERIFICATION ═══
+
+export type VerifierType = "nli" | "llm_judge" | "rule_based";
+
+export type VerifierVerdict = "supported" | "contradicted" | "unverifiable" | "not_applicable";
+
+export interface VerifierResult {
+  verifier: VerifierType;
+  verdict: VerifierVerdict;
+  confidence: number; // 0–1
+  reasoning: string;
+  modelName: string; // e.g. "RoBERTa-large-MNLI", "GPT-5 Judge", "NumericChecker v2"
+}
+
+export interface MultiModelVerification {
+  results: VerifierResult[];
+  consensus: boolean; // true if all applicable verifiers agree
+  finalVerdict: SentenceStatus;
+  disagreementNote?: string; // present when consensus is false
+}
+
 export type HallucinationSeverity = "critical" | "moderate" | "minor";
 
 export interface SeverityInfo {
@@ -46,6 +67,7 @@ export interface AuditSentence {
   severity?: SeverityInfo; // only present for contradicted claims
   sourceConflict?: SourceConflictInfo; // only present for source_conflict claims
   correction?: LockedCorrection; // only present for contradicted claims
+  verification?: MultiModelVerification; // multi-model verification results
 }
 
 export interface SourceParagraph {
@@ -113,6 +135,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The founding year, founder name, and company classification all match the corporate filing document exactly.",
       evidenceIds: ["p1-2"],
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "supported", confidence: 0.96, reasoning: "High entailment score — premise contains founding year (2017), founder (Dr. Ananya Kapoor), and classification (digital therapeutics).", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "supported", confidence: 0.98, reasoning: "All factual claims in this sentence are directly stated in the corporate filing.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "supported", confidence: 0.95, reasoning: "Year 2017 matches source. Entity names match exactly.", modelName: "FactCheck Rules v3" },
+        ],
+        consensus: true,
+        finalVerdict: "supported",
+      },
     },
     {
       id: "s2",
@@ -150,6 +181,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
         ],
         sourceLockedNote: "Correction uses only facts from regulatory-status-report.pdf. The original date (January 2023) was replaced with the verified clearance date (March 15, 2024).",
       },
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "contradicted", confidence: 0.91, reasoning: "Contradiction detected — hypothesis states 'January 2023' while premise states 'March 15, 2024'. High contradiction score on temporal entity.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "contradicted", confidence: 0.94, reasoning: "The clearance date is factually wrong — source says March 2024, claim says January 2023. A 14-month discrepancy.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "not_applicable", confidence: 0, reasoning: "No numeric consistency check applicable — date formats require NLI/LLM analysis.", modelName: "FactCheck Rules v3" },
+        ],
+        consensus: true,
+        finalVerdict: "contradicted",
+      },
     },
     {
       id: "s3",
@@ -159,6 +199,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The technical whitepaper confirms a deep-learning approach trained on 2.1 million anonymized brain MRI scans from partner hospitals.",
       evidenceIds: ["p3-2"],
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "supported", confidence: 0.87, reasoning: "Entailment detected — 'over 2 million' is consistent with '2,100,000' in the source.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "supported", confidence: 0.90, reasoning: "The claim 'over 2 million' is a reasonable rounding of the actual 2.1 million figure.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "supported", confidence: 0.92, reasoning: "Numeric check: 2,100,000 ≥ 2,000,000 — claim 'over 2 million' is verified.", modelName: "NumericChecker v2" },
+        ],
+        consensus: true,
+        finalVerdict: "supported",
+      },
     },
     {
       id: "s4",
@@ -196,6 +245,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
         ],
         sourceLockedNote: "Correction uses only figures from financial-disclosure-q2-2025.pdf. The fabricated $120M ARR was replaced with the verified $47.3M figure.",
       },
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "contradicted", confidence: 0.93, reasoning: "Strong contradiction — hypothesis '$120 million' directly conflicts with premise '$47,300,000'.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "contradicted", confidence: 0.97, reasoning: "ARR is overstated by 153%. Source clearly states $47.3M, not $120M.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "contradicted", confidence: 0.99, reasoning: "Numeric mismatch: Claimed $120,000,000 vs source $47,300,000. Deviation: +153.7%. Exceeds 5% tolerance threshold.", modelName: "NumericChecker v2" },
+        ],
+        consensus: true,
+        finalVerdict: "contradicted",
+      },
     },
     {
       id: "s5",
@@ -205,6 +263,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The partnership announcements document confirms active agreements with all three institutions.",
       evidenceIds: ["p5-1"],
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "supported", confidence: 0.94, reasoning: "All three named institutions appear in the source with 'ACTIVE' status.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "supported", confidence: 0.92, reasoning: "Exact entity match — all three hospitals are confirmed active partners.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "not_applicable", confidence: 0, reasoning: "No numeric claims to verify.", modelName: "FactCheck Rules v3" },
+        ],
+        consensus: true,
+        finalVerdict: "supported",
+      },
     },
     {
       id: "s6",
@@ -251,6 +318,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
         ],
         sourceLockedNote: "Correction uses only results from the Phase III trial (NCT04892301) documented in technical-whitepaper-neurascan.pdf. The fabricated 99.7% accuracy was replaced with actual sensitivity/specificity metrics.",
       },
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "contradicted", confidence: 0.96, reasoning: "Strong contradiction — '99.7% accuracy' conflicts with '87.3% sensitivity' and '91.2% specificity' in the source.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "contradicted", confidence: 0.99, reasoning: "The claimed accuracy metric is fabricated. Published trial data shows significantly lower performance metrics.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "contradicted", confidence: 0.98, reasoning: "Numeric mismatch: Claimed 99.7% vs source sensitivity 87.3% (deviation: -12.4pp). Specificity 91.2% also well below 99.7%. Fails tolerance check.", modelName: "NumericChecker v2" },
+        ],
+        consensus: true,
+        finalVerdict: "contradicted",
+      },
     },
     {
       id: "s7",
@@ -260,6 +336,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "No source document mentions European expansion plans or a Zurich office. This claim can neither be confirmed nor denied with available materials.",
       evidenceIds: [],
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "unverifiable", confidence: 0.82, reasoning: "No matching premise found in any source document. Cannot compute entailment without evidence.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "unverifiable", confidence: 0.88, reasoning: "No source document mentions European expansion, Zurich, or any international HQ plans.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "not_applicable", confidence: 0, reasoning: "No numeric claims to verify.", modelName: "FactCheck Rules v3" },
+        ],
+        consensus: true,
+        finalVerdict: "unverifiable",
+      },
     },
     {
       id: "s8",
@@ -269,6 +354,16 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The HR overview mentions '500+ employees' but does not specify office count. The 800 figure cannot be verified and may be inflated.",
       evidenceIds: ["p6-1"],
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "supported", confidence: 0.61, reasoning: "Weak entailment — premise mentions employees and offices, hypothesis aligns thematically. NLI model may over-generalize on partial lexical overlap.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "unverifiable", confidence: 0.78, reasoning: "Source says '520 employees' and lists 3 offices (Cambridge, SF, Austin). Claim of '800 people' and '5 offices' cannot be confirmed.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "contradicted", confidence: 0.94, reasoning: "Numeric mismatch: Claimed 800 vs source 520 employees (deviation: +53.8%). Office count: claimed 5, source lists 3. Both exceed tolerance.", modelName: "NumericChecker v2" },
+        ],
+        consensus: false,
+        finalVerdict: "unverifiable",
+        disagreementNote: "Models disagree on this claim. NLI detected weak entailment due to lexical overlap, but the LLM judge found the specific numbers unverifiable, and the rule-based checker flagged numeric inconsistencies (800 vs 520 employees, 5 vs 3 offices). Human review recommended — the claim may be partially true but contains inflated figures.",
+      },
     },
     {
       id: "s9",
@@ -278,6 +373,15 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The executive biography confirms both degrees with the correct institutions.",
       evidenceIds: ["p1-3"],
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "supported", confidence: 0.97, reasoning: "Strong entailment — both degrees and institutions are explicitly stated in the premise.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "supported", confidence: 0.95, reasoning: "Exact match on both Ph.D. fields and institutions (MIT, Stanford).", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "not_applicable", confidence: 0, reasoning: "No numeric claims to verify.", modelName: "FactCheck Rules v3" },
+        ],
+        consensus: true,
+        finalVerdict: "supported",
+      },
     },
     {
       id: "s10",
@@ -307,6 +411,16 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
         sourceLockedNote: "The WHO endorsement claim was entirely fabricated — no source document mentions any WHO involvement. The correction replaces this with verified institutional partnerships.",
         removedContent: "WHO endorsement claim removed entirely. No source document contains any reference to the World Health Organization.",
       },
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "contradicted", confidence: 0.72, reasoning: "No entailing premise found. Absence of evidence scored as contradiction by the model, though this is an edge case for NLI.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "unverifiable", confidence: 0.85, reasoning: "No source mentions WHO. This could be unverifiable (absent from sources) or fabricated. Without negative evidence, classifying as unverifiable.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "not_applicable", confidence: 0, reasoning: "No numeric claims to verify.", modelName: "FactCheck Rules v3" },
+        ],
+        consensus: false,
+        finalVerdict: "contradicted",
+        disagreementNote: "NLI model classified this as contradicted (absence = contradiction), while the LLM judge classified it as unverifiable (absence ≠ contradiction). The final verdict leans toward 'contradicted' because a WHO endorsement is a verifiable institutional claim that should appear in source documents if true. Human review recommended.",
+      },
     },
     {
       id: "s11",
@@ -328,6 +442,16 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
           documentName: "financial-disclosure-q2-2025.pdf",
           excerpt: "Historical Financing Summary:\nSeries A (2019): $18M\nSeries B (2022): $62M at $310M pre-money valuation\nSeries C (2024): $145M — terms undisclosed\nTotal equity raised to date: $228.2M",
         },
+      },
+      verification: {
+        results: [
+          { verifier: "nli", verdict: "supported", confidence: 0.88, reasoning: "High entailment with corporate filing source — $85M and $400M valuation match exactly.", modelName: "RoBERTa-large-MNLI" },
+          { verifier: "llm_judge", verdict: "contradicted", confidence: 0.75, reasoning: "Claim matches corporate filing but contradicts financial disclosure ($62M at $310M). Cross-source inconsistency detected.", modelName: "GPT-5 Judge" },
+          { verifier: "rule_based", verdict: "contradicted", confidence: 0.90, reasoning: "Numeric conflict: Source A says $85M/$400M, Source B says $62M/$310M. Values diverge by 37% and 29% respectively.", modelName: "NumericChecker v2" },
+        ],
+        consensus: false,
+        finalVerdict: "source_conflict",
+        disagreementNote: "NLI model validated against one source (corporate filing) while the LLM judge and rule-based checker detected cross-source numeric conflict. Reclassified as source conflict — the contradiction is between documents, not the model.",
       },
     },
   ],
