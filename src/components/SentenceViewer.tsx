@@ -11,6 +11,7 @@ import {
   Info,
   GitCompareArrows,
   FileWarning,
+  Wrench,
 } from "lucide-react";
 import type { AuditSentence, SentenceStatus, HallucinationSeverity } from "@/lib/audit-types";
 
@@ -234,6 +235,14 @@ const SentenceViewer = ({
                     {/* Source conflict badge */}
                     {sentence.status === "source_conflict" && (
                       <SourceConflictBadge explanation={sentence.sourceConflict?.explanation ?? "Sources provide contradictory information."} />
+                    )}
+
+                    {/* Correction available badge */}
+                    {sentence.status === "contradicted" && sentence.correction && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider border cursor-help text-verified bg-verified/10 border-verified/30">
+                        <Wrench className="w-3 h-3" />
+                        FIX READY
+                      </span>
                     )}
                     <span className="text-[10px] font-mono text-muted-foreground">
                       {(sentence.confidence * 100).toFixed(0)}%

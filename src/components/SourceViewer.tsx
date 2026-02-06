@@ -1,6 +1,7 @@
 import { useRef, useEffect, useMemo } from "react";
-import { FileText, ChevronRight, GitCompareArrows } from "lucide-react";
+import { FileText, ChevronRight, GitCompareArrows, Wrench } from "lucide-react";
 import type { SourceDocument, AuditSentence } from "@/lib/audit-types";
+import CorrectionEngine from "@/components/CorrectionEngine";
 
 interface SourceViewerProps {
   documents: SourceDocument[];
@@ -18,6 +19,7 @@ const SourceViewer = ({ documents, selectedSentence }: SourceViewerProps) => {
   }, [selectedSentence]);
 
   const isSourceConflict = selectedSentence?.status === "source_conflict" && !!selectedSentence.sourceConflict;
+  const hasCorrection = selectedSentence?.status === "contradicted" && !!selectedSentence.correction;
 
   // Auto-scroll to the first matching evidence paragraph
   useEffect(() => {
@@ -159,6 +161,22 @@ const SourceViewer = ({ documents, selectedSentence }: SourceViewerProps) => {
       ) : (
         /* Standard document view */
         <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+          {/* Correction Engine — shows for contradicted sentences with corrections */}
+          {hasCorrection && selectedSentence.correction && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-1">
+                <Wrench className="w-3.5 h-3.5 text-verified" />
+                <span className="text-[10px] font-mono font-extrabold tracking-widest text-verified uppercase">
+                  Locked Correction Engine
+                </span>
+              </div>
+              <CorrectionEngine
+                originalText={selectedSentence.text}
+                correction={selectedSentence.correction}
+              />
+            </div>
+          )}
+
           {documents.map((doc) => (
             <div key={doc.id} className="space-y-1">
               {/* Document name header */}
