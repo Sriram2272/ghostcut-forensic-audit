@@ -58,8 +58,17 @@ const Index = () => {
       const { documents: ingestedDocs, index, totalChunks } = await ingestDocuments(files);
       vectorIndexRef.current = index;
 
+      if (index.size === 0) {
+        toast.error("Retrieval failed: no chunks indexed.", {
+          description:
+            "Documents were uploaded but produced no indexable text chunks. The audit cannot proceed without a populated vector index.",
+        });
+        setIsAuditing(false);
+        return;
+      }
+
       toast.info(`Ingested ${files.length} document${files.length > 1 ? "s" : ""}`, {
-        description: `${totalChunks} chunks indexed in memory. Verification scope: uploaded documents only.`,
+        description: `${totalChunks} chunks indexed in memory. Retrieval-augmented verification scope: uploaded documents only.`,
       });
 
       // 2. Verify claims against the index
