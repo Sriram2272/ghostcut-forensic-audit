@@ -71,8 +71,8 @@ const Index = () => {
         description: `${totalChunks} chunks indexed in memory. Retrieval-augmented verification scope: uploaded documents only.`,
       });
 
-      // 2. Verify claims against the index
-      const result = runVerification(llmText, index, ingestedDocs);
+      // 2. Verify claims against the index (async — real model calls)
+      const result = await runVerification(llmText, index, ingestedDocs);
 
       setAuditResult(result);
       setAuditDurationMs(Date.now() - auditStartRef.current);
