@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -6,8 +6,11 @@ import {
   ShieldCheck,
   ShieldAlert,
   ShieldQuestion,
+  AlertTriangle,
+  Flame,
+  Info,
 } from "lucide-react";
-import type { AuditSentence, SentenceStatus } from "@/lib/audit-types";
+import type { AuditSentence, SentenceStatus, HallucinationSeverity } from "@/lib/audit-types";
 
 interface SentenceViewerProps {
   sentences: AuditSentence[];
@@ -57,6 +60,39 @@ const statusConfig: Record<
     border: "border-warning/25",
     bar: "border-l-[3px] border-l-warning",
     glow: "shadow-[inset_0_0_30px_-12px_hsl(var(--warning)/0.15)]",
+  },
+};
+
+const severityConfig: Record<
+  HallucinationSeverity,
+  {
+    icon: typeof Flame;
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+  }
+> = {
+  critical: {
+    icon: Flame,
+    label: "CRITICAL",
+    color: "text-destructive",
+    bg: "bg-destructive/15",
+    border: "border-destructive/40",
+  },
+  moderate: {
+    icon: AlertTriangle,
+    label: "MODERATE",
+    color: "text-warning",
+    bg: "bg-warning/15",
+    border: "border-warning/40",
+  },
+  minor: {
+    icon: Info,
+    label: "MINOR",
+    color: "text-muted-foreground",
+    bg: "bg-muted",
+    border: "border-border",
   },
 };
 
@@ -162,12 +198,18 @@ const SentenceViewer = ({
                   >
                     {sentence.text}
                   </p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span
                       className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider ${config.color} ${config.bg} border ${config.border}`}
                     >
                       {config.label}
                     </span>
+                    
+                    {/* Severity badge for contradicted claims */}
+                    {sentence.status === "contradicted" && sentence.severity && (
+                      <SeverityBadge severity={sentence.severity.level} reasoning={sentence.severity.reasoning} />
+                    )}
+
                     <span className="text-[10px] font-mono text-muted-foreground">
                       {(sentence.confidence * 100).toFixed(0)}%
                     </span>
@@ -188,6 +230,18 @@ const SentenceViewer = ({
                       <p className="text-xs text-foreground/70 leading-relaxed">
                         {sentence.reasoning}
                       </p>
+
+                      {/* Severity reasoning (only for contradicted) */}
+                      {sentence.status === "contradicted" && sentence.severity && (
+                        <div className="mt-2 pt-2 border-t border-border/30">
+                          <p className="text-[10px] font-mono font-bold text-destructive uppercase tracking-widest mb-1">
+                            Severity Assessment
+                          </p>
+                          <p className="text-xs text-foreground/70 leading-relaxed">
+                            {sentence.severity.reasoning}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -205,6 +259,51 @@ const SentenceViewer = ({
           );
         })}
       </div>
+    </div>
+  );
+};
+
+// ═══ SEVERITY BADGE WITH HOVER TOOLTIP ═══
+const SeverityBadge = ({
+  severity,
+  reasoning,
+}: {
+  severity: HallucinationSeverity;
+  reasoning: string;
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const config = severityConfig[severity];
+  const SevIcon = config.icon;
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <span
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider border cursor-help ${config.color} ${config.bg} ${config.border}`}
+      >
+        <SevIcon className="w-3 h-3" />
+        {config.label}
+      </span>
+
+      {/* Tooltip */}
+      {showTooltip && (
+        <div className="absolute left-0 bottom-full mb-2 z-50 w-72 animate-fade-in-up">
+          <div className={`rounded-lg border-2 ${config.border} bg-card shadow-2xl p-3`}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <SevIcon className={`w-4 h-4 ${config.color}`} />
+              <span className={`text-[10px] font-mono font-extrabold tracking-widest ${config.color}`}>
+                {config.label} SEVERITY
+              </span>
+            </div>
+            <p className="text-xs text-foreground/80 leading-relaxed">
+              {reasoning}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

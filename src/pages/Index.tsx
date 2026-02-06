@@ -7,7 +7,7 @@ import SourceViewer from "@/components/SourceViewer";
 import TrustScore from "@/components/TrustScore";
 import ClaimGraphView from "@/components/ClaimGraphView";
 import { AuditEmptyState } from "@/components/HighlightedText";
-import { MOCK_AUDIT_RESULT } from "@/lib/audit-types";
+import { MOCK_AUDIT_RESULT, computeWeightedTrustScore } from "@/lib/audit-types";
 import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2 } from "lucide-react";
 
 type WorkspaceView = "split" | "graph";
@@ -40,6 +40,7 @@ const Index = () => {
   };
 
   const result = MOCK_AUDIT_RESULT;
+  const weightedScore = useMemo(() => computeWeightedTrustScore(result.sentences), [result.sentences]);
 
   const selectedSentence = useMemo(
     () => result.sentences.find((s) => s.id === selectedSentenceId) ?? null,
@@ -187,7 +188,7 @@ const Index = () => {
         {showStats && (
           <div className="w-1/4 border-l-2 border-border overflow-y-auto p-4 bg-card/50 animate-slide-in-right">
             <TrustScore
-              score={result.trustScore}
+              score={weightedScore}
               totalClaims={counts.total}
               verifiedClaims={counts.supported}
               hallucinatedClaims={counts.contradicted}

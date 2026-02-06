@@ -1,5 +1,12 @@
 export type SentenceStatus = "supported" | "contradicted" | "unverifiable";
 
+export type HallucinationSeverity = "critical" | "moderate" | "minor";
+
+export interface SeverityInfo {
+  level: HallucinationSeverity;
+  reasoning: string;
+}
+
 export interface AuditSentence {
   id: string;
   text: string;
@@ -7,6 +14,7 @@ export interface AuditSentence {
   confidence: number;
   reasoning: string;
   evidenceIds: string[]; // links to SourceParagraph ids
+  severity?: SeverityInfo; // only present for contradicted claims
 }
 
 export interface SourceParagraph {
@@ -25,7 +33,40 @@ export interface SourceDocument {
 export interface AuditResult {
   sentences: AuditSentence[];
   documents: SourceDocument[];
-  trustScore: number;
+  trustScore: number; // now computed dynamically via computeWeightedTrustScore
+}
+
+// ═══════════════════════════════════════════
+// SEVERITY-WEIGHTED TRUST SCORE
+// ═══════════════════════════════════════════
+
+const SEVERITY_WEIGHTS: Record<HallucinationSeverity, number> = {
+  critical: 3.0,
+  moderate: 1.5,
+  minor: 0.5,
+};
+
+/**
+ * Compute a trust score weighted by hallucination severity.
+ * Critical errors hurt 3× more than minor ones.
+ */
+export function computeWeightedTrustScore(sentences: AuditSentence[]): number {
+  if (sentences.length === 0) return 100;
+
+  const maxPenalty = sentences.length * SEVERITY_WEIGHTS.critical; // worst case
+  let totalPenalty = 0;
+
+  for (const s of sentences) {
+    if (s.status === "contradicted" && s.severity) {
+      totalPenalty += SEVERITY_WEIGHTS[s.severity.level];
+    } else if (s.status === "unverifiable") {
+      totalPenalty += 0.3; // minor penalty for unverifiable
+    }
+    // supported = 0 penalty
+  }
+
+  const score = Math.round(Math.max(0, Math.min(100, 100 * (1 - totalPenalty / maxPenalty) )));
+  return score;
 }
 
 // ═══════════════════════════════════════════
@@ -52,6 +93,10 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The regulatory filing shows the 510(k) clearance was granted in March 2024, not January 2023. The product name is correct but the date is fabricated, which is a dangerous error in a medical context.",
       evidenceIds: ["p2-3"],
+      severity: {
+        level: "moderate",
+        reasoning: "Incorrect date on a regulatory filing. While the FDA clearance exists, the 14-month date discrepancy could mislead investors about the company's regulatory timeline and product maturity.",
+      },
     },
     {
       id: "s3",
@@ -70,6 +115,10 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The financial disclosure for Q2 2025 clearly states ARR of $47.3 million. The claimed $120M figure is a 153% overstatement and constitutes a material misrepresentation.",
       evidenceIds: ["p4-2"],
+      severity: {
+        level: "critical",
+        reasoning: "Numeric financial fact inflated by 153%. ARR of $120M vs actual $47.3M constitutes material misrepresentation that could violate SEC regulations and mislead investors in due diligence.",
+      },
     },
     {
       id: "s5",
@@ -88,6 +137,10 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "The published trial results show 87.3% sensitivity and 91.2% specificity—not 99.7% accuracy. This exaggeration in a medical AI claim could directly endanger patients.",
       evidenceIds: ["p3-4"],
+      severity: {
+        level: "critical",
+        reasoning: "Fabricated medical accuracy statistic for a cancer detection tool. Overstating diagnostic performance from 87% to 99.7% could lead to misplaced clinical trust and endanger patient lives.",
+      },
     },
     {
       id: "s7",
@@ -124,6 +177,10 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       reasoning:
         "No WHO endorsement exists in any uploaded document. A WHO endorsement is a significant institutional claim that appears entirely fabricated. This is a high-severity hallucination.",
       evidenceIds: [],
+      severity: {
+        level: "critical",
+        reasoning: "Entirely fabricated institutional endorsement from the WHO — a global health authority. False claims of WHO backing for a medical device constitute fraud and could facilitate illegal market entry.",
+      },
     },
   ],
   documents: [
