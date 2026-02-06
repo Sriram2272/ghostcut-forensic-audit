@@ -9,18 +9,22 @@ import ClaimGraphView from "@/components/ClaimGraphView";
 import AuditComparison from "@/components/AuditComparison";
 import VerificationScopeBanner from "@/components/VerificationScopeBanner";
 import VerificationPolicy from "@/components/VerificationPolicy";
+import BatchAuditPanel from "@/components/BatchAuditPanel";
+import type { BatchItem, BatchProgress } from "@/components/BatchAuditPanel";
 import { AuditEmptyState } from "@/components/HighlightedText";
 import type { AuditResult } from "@/lib/audit-types";
 import { ingestDocuments, InMemoryVectorIndex } from "@/lib/document-pipeline";
 import { runVerification } from "@/lib/verification-engine";
 import { generateAuditPDF } from "@/lib/pdf-export";
 import { useAuditHistory } from "@/hooks/use-audit-history";
-import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2, GitCompareArrows, Save } from "lucide-react";
+import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2, GitCompareArrows, Save, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 type WorkspaceView = "split" | "graph" | "compare";
+type InputMode = "single" | "batch";
 
 const Index = () => {
+  // ═══ SINGLE AUDIT STATE ═══
   const [llmText, setLlmText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [isAuditing, setIsAuditing] = useState(false);
@@ -33,9 +37,17 @@ const Index = () => {
   const auditStartRef = useRef<number>(0);
   const vectorIndexRef = useRef<InMemoryVectorIndex | null>(null);
 
+  // ═══ BATCH AUDIT STATE ═══
+  const [inputMode, setInputMode] = useState<InputMode>("single");
+  const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
+  const [isBatchRunning, setIsBatchRunning] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+
   const { snapshots, saveSnapshot, removeSnapshot, clearSnapshots } = useAuditHistory();
 
   const canAudit = llmText.trim().length > 0 && files.length > 0;
+
+  // ═══ HANDLERS ═══
 
   const handleExportPDF = useCallback(() => {
     if (!auditResult) {
@@ -56,7 +68,7 @@ const Index = () => {
 
   const handleSaveToHistory = useCallback(() => {
     if (!auditResult) return;
-    const id = saveSnapshot(auditResult, auditDurationMs);
+    saveSnapshot(auditResult, auditDurationMs);
     toast.success("Audit saved for comparison", {
       description: `Snapshot saved. View in Compare tab.`,
     });
@@ -109,6 +121,111 @@ const Index = () => {
     }
   }, [llmText, files]);
 
+  // ═══ BATCH AUDIT HANDLER ═══
+
+  const handleBatchAudit = useCallback(async () => {
+    const validItems = batchItems.filter((i) => i.text.trim().length > 0);
+
+    if (validItems.length === 0) {
+      toast.error("No LLM outputs in the batch queue.");
+      return;
+    }
+
+    if (files.length === 0) {
+      toast.error("No source documents uploaded.", {
+        description: "Upload at least one source document before running batch audit.",
+      });
+      return;
+    }
+
+    setIsBatchRunning(true);
+    const batchStart = Date.now();
+
+    try {
+      // Ingest documents once for all batch items
+      const { documents: ingestedDocs, index, totalChunks } = await ingestDocuments(files);
+      vectorIndexRef.current = index;
+
+      if (index.size === 0) {
+        toast.error("Retrieval failed: no chunks indexed.");
+        setIsBatchRunning(false);
+        return;
+      }
+
+      toast.info(`Ingested ${files.length} document${files.length > 1 ? "s" : ""}`, {
+        description: `${totalChunks} chunks indexed. Running ${validItems.length} audits sequentially.`,
+      });
+
+      let lastResult: AuditResult | null = null;
+      let lastDuration = 0;
+
+      for (let i = 0; i < validItems.length; i++) {
+        const item = validItems[i];
+
+        setBatchProgress({
+          currentIndex: i,
+          totalItems: validItems.length,
+          currentLabel: item.label,
+          claimsCompleted: 0,
+          claimsTotal: 0,
+        });
+
+        const itemStart = Date.now();
+
+        try {
+          const result = await runVerification(
+            item.text,
+            index,
+            ingestedDocs,
+            (completed, total) => {
+              setBatchProgress((prev) =>
+                prev ? { ...prev, claimsCompleted: completed, claimsTotal: total } : prev
+              );
+            }
+          );
+
+          const itemDuration = Date.now() - itemStart;
+
+          // Auto-save each result to comparison history
+          saveSnapshot(result, itemDuration, item.label);
+
+          lastResult = result;
+          lastDuration = itemDuration;
+
+          toast.success(`✓ ${item.label}`, {
+            description: `Completed in ${itemDuration < 1000 ? `${itemDuration}ms` : `${(itemDuration / 1000).toFixed(1)}s`}. Auto-saved.`,
+          });
+        } catch (err) {
+          toast.error(`✗ ${item.label} failed`, {
+            description: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      setBatchProgress(null);
+
+      // Show the last result in the workspace and switch to compare view
+      if (lastResult) {
+        setAuditResult(lastResult);
+        setAuditDurationMs(lastDuration);
+        setAuditComplete(true);
+        setSelectedSentenceId(null);
+        setWorkspaceView("compare");
+
+        toast.success(`Batch audit complete`, {
+          description: `${validItems.length} audits completed. Viewing comparison.`,
+        });
+      }
+    } catch (err) {
+      toast.error("Batch audit failed", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setIsBatchRunning(false);
+      setBatchProgress(null);
+    }
+  }, [batchItems, files, saveSnapshot]);
+
   const handleReset = useCallback(() => {
     setLlmText("");
     setFiles([]);
@@ -118,6 +235,9 @@ const Index = () => {
     setShowStats(false);
     setWorkspaceView("split");
     setAuditDurationMs(0);
+    setInputMode("single");
+    setBatchItems([]);
+    setBatchProgress(null);
     auditStartRef.current = 0;
     if (vectorIndexRef.current) {
       vectorIndexRef.current.clear();
@@ -146,41 +266,87 @@ const Index = () => {
     };
   }, [auditResult]);
 
+  // ═══ INPUT SCREEN ═══
+
   if (!auditComplete || !auditResult) {
     return (
-      <Layout onAudit={handleAudit} canAudit={canAudit} isAuditing={isAuditing}>
+      <Layout onAudit={inputMode === "single" ? handleAudit : undefined} canAudit={canAudit} isAuditing={isAuditing || isBatchRunning}>
         <div className="px-4 sm:px-6 py-6 pb-14 max-w-[1440px] mx-auto">
-          {/* Mobile audit button */}
-          <div className="sm:hidden mb-4">
-            <button
-              onClick={handleAudit}
-              disabled={!canAudit || isAuditing}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-destructive text-destructive-foreground font-bold text-sm tracking-wide transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed glow-red"
-            >
-              {isAuditing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
-                  PROCESSING DOCUMENTS…
-                </>
-              ) : (
-                <>
-                  <Scissors className="w-4 h-4" />
-                  RUN AUDIT
-                </>
-              )}
-            </button>
+          {/* Mode toggle */}
+          <div className="flex items-center justify-center gap-1 mb-6">
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted border border-border">
+              <button
+                onClick={() => setInputMode("single")}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
+                  inputMode === "single"
+                    ? "bg-background border border-border text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Scissors className="w-3.5 h-3.5" />
+                Single Audit
+              </button>
+              <button
+                onClick={() => setInputMode("batch")}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold transition-all ${
+                  inputMode === "batch"
+                    ? "bg-background border border-border text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Batch Audit
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="p-5 rounded-xl bg-card border-2 border-border">
-              <AuditInput text={llmText} onTextChange={setLlmText} />
+          {/* Mobile audit button (single mode only) */}
+          {inputMode === "single" && (
+            <div className="sm:hidden mb-4">
+              <button
+                onClick={handleAudit}
+                disabled={!canAudit || isAuditing}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-destructive text-destructive-foreground font-bold text-sm tracking-wide transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed glow-red"
+              >
+                {isAuditing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
+                    PROCESSING DOCUMENTS…
+                  </>
+                ) : (
+                  <>
+                    <Scissors className="w-4 h-4" />
+                    RUN AUDIT
+                  </>
+                )}
+              </button>
             </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left column: input area */}
+            <div className="p-5 rounded-xl bg-card border-2 border-border">
+              {inputMode === "single" ? (
+                <AuditInput text={llmText} onTextChange={setLlmText} />
+              ) : (
+                <BatchAuditPanel
+                  items={batchItems}
+                  onItemsChange={setBatchItems}
+                  onRunBatch={handleBatchAudit}
+                  isRunning={isBatchRunning}
+                  progress={batchProgress}
+                  fileCount={files.length}
+                />
+              )}
+            </div>
+
+            {/* Right column: documents + policy */}
             <div className="space-y-6">
               <div className="p-5 rounded-xl bg-card border-2 border-border">
                 <DocumentUpload files={files} onFilesChange={setFiles} />
               </div>
               <VerificationPolicy />
-              <AuditEmptyState />
+              {inputMode === "single" && <AuditEmptyState />}
             </div>
           </div>
         </div>
