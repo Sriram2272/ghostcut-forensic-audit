@@ -6,9 +6,11 @@ interface LayoutProps {
   onAudit?: () => void | Promise<void>;
   canAudit?: boolean;
   isAuditing?: boolean;
+  onExportPDF?: () => void;
+  hasAuditResult?: boolean;
 }
 
-const Layout = ({ children, onAudit, canAudit, isAuditing }: LayoutProps) => {
+const Layout = ({ children, onAudit, canAudit, isAuditing, onExportPDF, hasAuditResult }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background bg-grid-pattern">
       {/* Hazard accent line at very top */}
@@ -56,7 +58,7 @@ const Layout = ({ children, onAudit, canAudit, isAuditing }: LayoutProps) => {
                 )}
               </button>
             )}
-            {!onAudit && (
+            {!onAudit && !hasAuditResult && (
               <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border">
                 <AlertTriangle className="w-4 h-4 text-warning" />
                 <span className="text-xs font-mono font-bold text-warning">
@@ -69,8 +71,10 @@ const Layout = ({ children, onAudit, canAudit, isAuditing }: LayoutProps) => {
           {/* RIGHT: Actions */}
           <div className="flex items-center gap-2">
             <button
-              className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center hover:bg-accent transition-colors"
-              title="Export Report"
+              onClick={onExportPDF}
+              disabled={!hasAuditResult}
+              className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Export PDF Report"
             >
               <Download className="w-4 h-4 text-muted-foreground" />
             </button>

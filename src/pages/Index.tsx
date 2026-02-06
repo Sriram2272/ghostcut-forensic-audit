@@ -6,16 +6,19 @@ import SentenceViewer from "@/components/SentenceViewer";
 import SourceViewer from "@/components/SourceViewer";
 import TrustDashboard from "@/components/TrustDashboard";
 import ClaimGraphView from "@/components/ClaimGraphView";
+import AuditComparison from "@/components/AuditComparison";
 import VerificationScopeBanner from "@/components/VerificationScopeBanner";
 import VerificationPolicy from "@/components/VerificationPolicy";
 import { AuditEmptyState } from "@/components/HighlightedText";
 import type { AuditResult } from "@/lib/audit-types";
 import { ingestDocuments, InMemoryVectorIndex } from "@/lib/document-pipeline";
 import { runVerification } from "@/lib/verification-engine";
-import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2 } from "lucide-react";
+import { generateAuditPDF } from "@/lib/pdf-export";
+import { useAuditHistory } from "@/hooks/use-audit-history";
+import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2, GitCompareArrows, Save } from "lucide-react";
 import { toast } from "sonner";
 
-type WorkspaceView = "split" | "graph";
+type WorkspaceView = "split" | "graph" | "compare";
 
 const Index = () => {
   const [llmText, setLlmText] = useState("");
@@ -30,14 +33,39 @@ const Index = () => {
   const auditStartRef = useRef<number>(0);
   const vectorIndexRef = useRef<InMemoryVectorIndex | null>(null);
 
+  const { snapshots, saveSnapshot, removeSnapshot, clearSnapshots } = useAuditHistory();
+
   const canAudit = llmText.trim().length > 0 && files.length > 0;
 
+  const handleExportPDF = useCallback(() => {
+    if (!auditResult) {
+      toast.error("No audit results to export.");
+      return;
+    }
+    try {
+      generateAuditPDF(auditResult, auditDurationMs);
+      toast.success("PDF report generated", {
+        description: "Forensic audit report downloaded successfully.",
+      });
+    } catch (err) {
+      toast.error("Export failed", {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, [auditResult, auditDurationMs]);
+
+  const handleSaveToHistory = useCallback(() => {
+    if (!auditResult) return;
+    const id = saveSnapshot(auditResult, auditDurationMs);
+    toast.success("Audit saved for comparison", {
+      description: `Snapshot saved. View in Compare tab.`,
+    });
+  }, [auditResult, auditDurationMs, saveSnapshot]);
+
   const handleAudit = useCallback(async () => {
-    // ═══ STRICT SOURCE SCOPE: refuse audit without documents ═══
     if (files.length === 0) {
       toast.error("No source documents uploaded. Audit aborted.", {
-        description:
-          "Upload at least one source document before running a forensic audit. No preloaded data or external knowledge is used.",
+        description: "Upload at least one source document before running a forensic audit.",
       });
       return;
     }
@@ -53,24 +81,19 @@ const Index = () => {
     auditStartRef.current = Date.now();
 
     try {
-      // 1. Ingest documents → read, chunk, vectorize, index
       const { documents: ingestedDocs, index, totalChunks } = await ingestDocuments(files);
       vectorIndexRef.current = index;
 
       if (index.size === 0) {
-        toast.error("Retrieval failed: no chunks indexed.", {
-          description:
-            "Documents were uploaded but produced no indexable text chunks. The audit cannot proceed without a populated vector index.",
-        });
+        toast.error("Retrieval failed: no chunks indexed.");
         setIsAuditing(false);
         return;
       }
 
       toast.info(`Ingested ${files.length} document${files.length > 1 ? "s" : ""}`, {
-        description: `${totalChunks} chunks indexed in memory. Retrieval-augmented verification scope: uploaded documents only.`,
+        description: `${totalChunks} chunks indexed. Retrieval scope: uploaded documents only.`,
       });
 
-      // 2. Verify claims against the index (async — real model calls)
       const result = await runVerification(llmText, index, ingestedDocs);
 
       setAuditResult(result);
@@ -96,18 +119,14 @@ const Index = () => {
     setWorkspaceView("split");
     setAuditDurationMs(0);
     auditStartRef.current = 0;
-    // Clear vector index
     if (vectorIndexRef.current) {
       vectorIndexRef.current.clear();
       vectorIndexRef.current = null;
     }
     toast.success("New forensic audit initialized", {
-      description:
-        "All previous sources, claim graphs, verification results, and vector index have been cleared. Context is fully isolated.",
+      description: "All previous data cleared. Context is fully isolated.",
     });
   }, []);
-
-  // Trust score is now computed internally by TrustDashboard via computeStrictAuditStats
 
   const selectedSentence = useMemo(
     () => auditResult?.sentences.find((s) => s.id === selectedSentenceId) ?? null,
@@ -128,13 +147,8 @@ const Index = () => {
   }, [auditResult]);
 
   if (!auditComplete || !auditResult) {
-    // ═══ INPUT MODE ═══
     return (
-      <Layout
-        onAudit={handleAudit}
-        canAudit={canAudit}
-        isAuditing={isAuditing}
-      >
+      <Layout onAudit={handleAudit} canAudit={canAudit} isAuditing={isAuditing}>
         <div className="px-4 sm:px-6 py-6 pb-14 max-w-[1440px] mx-auto">
           {/* Mobile audit button */}
           <div className="sm:hidden mb-4">
@@ -174,9 +188,9 @@ const Index = () => {
     );
   }
 
-  // ═══ WORKSPACE MODE — Split Screen ═══
+  // ═══ WORKSPACE MODE ═══
   return (
-    <Layout>
+    <Layout onExportPDF={handleExportPDF} hasAuditResult>
       {/* Workspace toolbar */}
       <div className="border-b-2 border-border bg-card/50 backdrop-blur-sm px-4 sm:px-6 py-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -209,9 +223,23 @@ const Index = () => {
             icon={<GitBranch className="w-3.5 h-3.5" />}
             label="Graph"
           />
+          <ViewTab
+            active={workspaceView === "compare"}
+            onClick={() => setWorkspaceView("compare")}
+            icon={<GitCompareArrows className="w-3.5 h-3.5" />}
+            label={`Compare${snapshots.length > 0 ? ` (${snapshots.length})` : ""}`}
+          />
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleSaveToHistory}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-secondary border-border text-xs font-semibold text-foreground hover:bg-accent transition-colors"
+            title="Save audit for comparison"
+          >
+            <Save className="w-3.5 h-3.5" />
+            Save
+          </button>
           <button
             onClick={() => setShowStats(!showStats)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-semibold transition-colors ${
@@ -230,7 +258,6 @@ const Index = () => {
       <div className="flex" style={{ height: "calc(100vh - 7.5rem)" }}>
         {workspaceView === "split" ? (
           <>
-            {/* LEFT PANEL — Sentence Viewer */}
             <div className={`${showStats ? "w-[37.5%]" : "w-1/2"} border-r-2 border-border overflow-hidden`}>
               <SentenceViewer
                 sentences={auditResult.sentences}
@@ -238,8 +265,6 @@ const Index = () => {
                 onSelectSentence={setSelectedSentenceId}
               />
             </div>
-
-            {/* RIGHT PANEL — Source Viewer */}
             <div className={`${showStats ? "w-[37.5%]" : "w-1/2"} overflow-hidden`}>
               <SourceViewer
                 documents={auditResult.documents}
@@ -247,10 +272,13 @@ const Index = () => {
               />
             </div>
           </>
-        ) : (
-          /* GRAPH VIEW */
+        ) : workspaceView === "graph" ? (
           <div className={`${showStats ? "w-3/4" : "w-full"} overflow-hidden`}>
             <ClaimGraphView sentences={auditResult.sentences} />
+          </div>
+        ) : (
+          <div className={`${showStats ? "w-3/4" : "w-full"} overflow-hidden`}>
+            <AuditComparison snapshots={snapshots} onRemoveSnapshot={removeSnapshot} />
           </div>
         )}
 
