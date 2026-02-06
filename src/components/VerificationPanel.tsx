@@ -52,10 +52,10 @@ const verdictConfig: Record<VerifierVerdict, { icon: typeof CheckCircle2; label:
   },
   unverifiable: {
     icon: HelpCircle,
-    label: "UNVERIFIABLE",
-    color: "text-warning",
-    bg: "bg-warning/10",
-    border: "border-warning/30",
+    label: "NO EVIDENCE",
+    color: "text-warning/80",
+    bg: "bg-warning/8",
+    border: "border-warning/20",
   },
   not_applicable: {
     icon: MinusCircle,

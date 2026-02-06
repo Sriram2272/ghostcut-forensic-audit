@@ -60,12 +60,12 @@ const statusConfig: Record<
   unverifiable: {
     icon: HelpCircle,
     shield: ShieldQuestion,
-    label: "UNVERIFIABLE",
-    color: "text-warning",
-    bg: "bg-warning/8",
-    border: "border-warning/25",
-    bar: "border-l-[3px] border-l-warning",
-    glow: "shadow-[inset_0_0_30px_-12px_hsl(var(--warning)/0.15)]",
+    label: "NO DIRECT EVIDENCE",
+    color: "text-warning/80",
+    bg: "bg-warning/5",
+    border: "border-warning/15",
+    bar: "border-l-[3px] border-l-warning/50",
+    glow: "shadow-[inset_0_0_25px_-12px_hsl(var(--warning)/0.08)]",
   },
   source_conflict: {
     icon: GitCompareArrows,
@@ -163,9 +163,9 @@ const SentenceViewer = ({
           />
           <StatusChip
             count={counts.unverifiable}
-            label="Unverifiable"
-            color="text-warning"
-            bg="bg-warning/10 border-warning/20"
+            label="No Evidence"
+            color="text-warning/80"
+            bg="bg-warning/8 border-warning/15"
           />
           {counts.source_conflict > 0 && (
             <StatusChip
