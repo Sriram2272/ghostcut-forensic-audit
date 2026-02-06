@@ -227,7 +227,9 @@ const SentenceViewer = ({
                     <span
                       className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider ${config.color} ${config.bg} border ${config.border}`}
                     >
-                      {config.label}
+                      {sentence.status === "supported"
+                        ? `SUPPORTED (Confidence ${(sentence.confidence.low * 100).toFixed(0)}–${(sentence.confidence.high * 100).toFixed(0)}%)`
+                        : config.label}
                     </span>
                     
                     {/* Severity badge for contradicted claims */}
@@ -248,8 +250,8 @@ const SentenceViewer = ({
                     </span>
                     )}
 
-                    {/* Verification disagreement badge */}
-                    {sentence.verification && !sentence.verification.consensus && (
+                    {/* Verification disagreement badge — hide for supported to avoid semantic confusion */}
+                    {sentence.verification && !sentence.verification.consensus && sentence.status !== "supported" && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider border cursor-help text-[hsl(var(--uncertain))] bg-[hsl(var(--uncertain)/0.1)] border-[hsl(var(--uncertain)/0.3)]">
                         <AlertTriangle className="w-3 h-3" />
                         UNCERTAIN
