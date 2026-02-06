@@ -1,4 +1,4 @@
-import { Ghost, Shield, Scissors, Eye } from "lucide-react";
+import { Ghost, Shield, Scissors, Eye, AlertTriangle } from "lucide-react";
 
 interface HighlightedTextProps {
   text: string;
@@ -10,9 +10,12 @@ interface HighlightedTextProps {
 }
 
 const statusStyles = {
-  verified: "bg-verified/15 border-b-2 border-verified/40",
-  hallucinated: "bg-destructive/15 border-b-2 border-destructive/40",
-  unverifiable: "bg-warning/15 border-b-2 border-warning/40",
+  verified:
+    "bg-verified/20 border-b-2 border-verified/60 decoration-verified",
+  hallucinated:
+    "bg-destructive/20 border-b-2 border-destructive/60 decoration-destructive",
+  unverifiable:
+    "bg-warning/20 border-b-2 border-warning/60 decoration-warning",
 };
 
 const HighlightedText = ({ text, highlights }: HighlightedTextProps) => {
@@ -31,7 +34,7 @@ const HighlightedText = ({ text, highlights }: HighlightedTextProps) => {
   sorted.forEach((h, i) => {
     if (h.start > lastEnd) {
       parts.push(
-        <span key={`plain-${i}`} className="text-foreground/80">
+        <span key={`plain-${i}`} className="text-foreground/70">
           {text.slice(lastEnd, h.start)}
         </span>
       );
@@ -50,50 +53,81 @@ const HighlightedText = ({ text, highlights }: HighlightedTextProps) => {
 
   if (lastEnd < text.length) {
     parts.push(
-      <span key="tail" className="text-foreground/80">
+      <span key="tail" className="text-foreground/70">
         {text.slice(lastEnd)}
       </span>
     );
   }
 
   return (
-    <p className="text-sm font-mono leading-relaxed whitespace-pre-wrap">
+    <p className="text-sm font-mono leading-loose whitespace-pre-wrap">
       {parts}
     </p>
   );
 };
 
-// Empty state component
 export const AuditEmptyState = () => (
-  <div className="flex flex-col items-center justify-center py-16 text-center">
+  <div className="flex flex-col items-center justify-center py-12 text-center">
     <div className="relative mb-6">
-      <div className="w-20 h-20 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center">
-        <Ghost className="w-10 h-10 text-primary/40" />
+      <div className="w-24 h-24 rounded-2xl bg-destructive/5 border-2 border-destructive/15 flex items-center justify-center">
+        <Ghost className="w-12 h-12 text-destructive/30" />
       </div>
-      <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center">
-        <Scissors className="w-4 h-4 text-muted-foreground" />
+      <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-lg bg-card border-2 border-border flex items-center justify-center glow-red">
+        <AlertTriangle className="w-5 h-5 text-destructive" />
       </div>
     </div>
-    <h3 className="text-lg font-semibold text-foreground mb-1">
-      Ready to Audit
+    <h3 className="text-xl font-extrabold text-foreground mb-2">
+      Ready to Detect Hallucinations
     </h3>
-    <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-      Paste LLM-generated text and upload source documents to begin hallucination detection.
+    <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+      This system forensically audits AI-generated text against your trusted source documents. Every claim is verified, flagged, or marked unverifiable.
     </p>
-    <div className="flex items-center gap-4 mt-6">
-      <Step icon={<Eye className="w-3.5 h-3.5" />} label="1. Paste LLM output" />
-      <div className="w-6 h-px bg-border" />
-      <Step icon={<Shield className="w-3.5 h-3.5" />} label="2. Upload sources" />
-      <div className="w-6 h-px bg-border" />
-      <Step icon={<Scissors className="w-3.5 h-3.5" />} label="3. Run audit" />
+    <div className="flex flex-col sm:flex-row items-center gap-4 mt-8">
+      <Step
+        number={1}
+        icon={<Eye className="w-4 h-4" />}
+        label="Paste LLM output"
+        color="text-destructive"
+      />
+      <div className="hidden sm:block w-8 h-px bg-border" />
+      <div className="sm:hidden h-4 w-px bg-border" />
+      <Step
+        number={2}
+        icon={<Shield className="w-4 h-4" />}
+        label="Upload source docs"
+        color="text-verified"
+      />
+      <div className="hidden sm:block w-8 h-px bg-border" />
+      <div className="sm:hidden h-4 w-px bg-border" />
+      <Step
+        number={3}
+        icon={<Scissors className="w-4 h-4" />}
+        label="Run forensic audit"
+        color="text-warning"
+      />
     </div>
   </div>
 );
 
-const Step = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-    {icon}
-    {label}
+const Step = ({
+  number,
+  icon,
+  label,
+  color,
+}: {
+  number: number;
+  icon: React.ReactNode;
+  label: string;
+  color: string;
+}) => (
+  <div className="flex items-center gap-2">
+    <div className={`w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center ${color}`}>
+      <span className="text-xs font-mono font-bold">{number}</span>
+    </div>
+    <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+      {icon}
+      {label}
+    </div>
   </div>
 );
 

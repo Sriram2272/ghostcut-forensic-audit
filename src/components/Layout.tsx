@@ -1,80 +1,118 @@
-import { Ghost, Shield, Activity } from "lucide-react";
-
-const GhostcutLogo = () => (
-  <div className="flex items-center gap-3">
-    <div className="relative">
-      <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center glow-cyan-sm">
-        <Ghost className="w-5 h-5 text-primary" />
-      </div>
-      <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-verified border-2 border-background" />
-    </div>
-    <div>
-      <h1 className="text-lg font-bold tracking-tight text-foreground">
-        GHOST<span className="text-gradient-cyan">CUT</span>
-      </h1>
-      <p className="text-[10px] font-mono text-muted-foreground tracking-widest uppercase">
-        Hallucination Auditor
-      </p>
-    </div>
-  </div>
-);
+import { Ghost, Settings, Download, Scissors, AlertTriangle } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 interface LayoutProps {
   children: React.ReactNode;
+  onAudit?: () => void;
+  canAudit?: boolean;
+  isAuditing?: boolean;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, onAudit, canAudit, isAuditing }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background bg-grid-pattern">
-      {/* Top bar */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="flex items-center justify-between px-6 h-14">
-          <GhostcutLogo />
+      {/* Hazard accent line at very top */}
+      <div className="h-1 hazard-stripe" />
 
-          <nav className="hidden md:flex items-center gap-1">
-            <NavItem icon={<Shield className="w-4 h-4" />} label="Audit" active />
-            <NavItem icon={<Activity className="w-4 h-4" />} label="History" />
-          </nav>
-
+      {/* Top navigation */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+        <div className="flex items-center justify-between px-4 sm:px-6 h-16">
+          {/* LEFT: Logo + tagline */}
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary border border-border">
-              <span className="text-xs font-mono text-muted-foreground">TEAM</span>
-              <span className="text-xs font-semibold text-primary">AVENGERS</span>
+            <div className="relative">
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 border-2 border-destructive/30 flex items-center justify-center">
+                <Ghost className="w-5 h-5 text-destructive" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-destructive animate-pulse-glow" />
             </div>
-            <div className="w-8 h-8 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">A</span>
+            <div>
+              <h1 className="text-lg font-extrabold tracking-tight text-foreground leading-none">
+                GHOST<span className="text-destructive">CUT</span>
+              </h1>
+              <p className="text-[10px] font-mono text-muted-foreground tracking-widest uppercase leading-none mt-0.5">
+                Cutting hallucinations out of AI
+              </p>
+            </div>
+          </div>
+
+          {/* CENTER: Primary audit action */}
+          <div className="hidden sm:flex items-center gap-3">
+            {onAudit && (
+              <button
+                onClick={onAudit}
+                disabled={!canAudit || isAuditing}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-destructive text-destructive-foreground font-bold text-sm tracking-wide transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed glow-red"
+              >
+                {isAuditing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-destructive-foreground/30 border-t-destructive-foreground rounded-full animate-spin" />
+                    AUDITING…
+                  </>
+                ) : (
+                  <>
+                    <Scissors className="w-4 h-4" />
+                    RUN AUDIT
+                  </>
+                )}
+              </button>
+            )}
+            {!onAudit && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary border border-border">
+                <AlertTriangle className="w-4 h-4 text-warning" />
+                <span className="text-xs font-mono font-bold text-warning">
+                  HALLUCINATION DETECTION SYSTEM
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: Actions */}
+          <div className="flex items-center gap-2">
+            <button
+              className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center hover:bg-accent transition-colors"
+              title="Export Report"
+            >
+              <Download className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <button
+              className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center hover:bg-accent transition-colors"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <ThemeToggle />
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary border border-border ml-1">
+              <span className="text-[10px] font-mono text-muted-foreground">TEAM</span>
+              <span className="text-xs font-bold text-primary">AVENGERS</span>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="relative">
-        {children}
-      </main>
+      <main className="relative">{children}</main>
+
+      {/* Bottom status bar */}
+      <footer className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/90 backdrop-blur-xl">
+        <div className="flex items-center justify-between px-4 sm:px-6 h-8">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-verified animate-pulse" />
+              SYSTEM ACTIVE
+            </span>
+            <span className="text-[10px] font-mono text-muted-foreground">
+              v1.0.0-alpha
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-[10px] font-mono text-muted-foreground">
+              ENGINE: GHOSTCUT FORENSIC CORE
+            </span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
-
-const NavItem = ({
-  icon,
-  label,
-  active = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-}) => (
-  <button
-    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-      active
-        ? "bg-primary/10 text-primary border border-primary/20"
-        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-    }`}
-  >
-    {icon}
-    {label}
-  </button>
-);
 
 export default Layout;

@@ -1,5 +1,7 @@
+import { ShieldAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
+
 interface TrustScoreProps {
-  score: number; // 0-100
+  score: number;
   totalClaims: number;
   verifiedClaims: number;
   hallucinatedClaims: number;
@@ -30,36 +32,38 @@ const TrustScore = ({
 
   const getGlowClass = () => {
     if (score >= 80) return "glow-green";
-    if (score >= 50) return "";
+    if (score >= 50) return "glow-amber";
     return "glow-red";
   };
 
+  const getVerdict = () => {
+    if (score >= 80) return { text: "LOW RISK", color: "text-verified", bg: "bg-verified/15 border-verified/30" };
+    if (score >= 50) return { text: "MEDIUM RISK", color: "text-warning", bg: "bg-warning/15 border-warning/30" };
+    return { text: "HIGH RISK", color: "text-destructive", bg: "bg-destructive/15 border-destructive/30" };
+  };
+
+  const verdict = getVerdict();
+
   return (
-    <div className="flex flex-col items-center gap-4 p-6 rounded-xl bg-card border border-border">
-      <h3 className="text-xs font-mono tracking-widest uppercase text-muted-foreground">
-        Trust Score
+    <div className="p-6 rounded-xl bg-card border-2 border-border">
+      <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-muted-foreground text-center mb-4">
+        Trust Verification Score
       </h3>
 
       {/* Gauge */}
-      <div className={`relative w-32 h-32 ${getGlowClass()} rounded-full`}>
+      <div className={`relative w-36 h-36 mx-auto ${getGlowClass()} rounded-full`}>
         <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-          {/* Background circle */}
           <circle
-            cx="60"
-            cy="60"
-            r="54"
+            cx="60" cy="60" r="54"
             fill="none"
             stroke="hsl(var(--border))"
-            strokeWidth="6"
+            strokeWidth="8"
           />
-          {/* Score arc */}
           <circle
-            cx="60"
-            cy="60"
-            r="54"
+            cx="60" cy="60" r="54"
             fill="none"
             stroke={getStrokeColor()}
-            strokeWidth="6"
+            strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
@@ -67,37 +71,48 @@ const TrustScore = ({
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-3xl font-bold font-mono ${getScoreColor()}`}>
+          <span className={`text-4xl font-extrabold font-mono ${getScoreColor()}`}>
             {score}
           </span>
-          <span className="text-[10px] text-muted-foreground font-mono">/ 100</span>
+          <span className="text-[10px] text-muted-foreground font-mono mt-0.5">/ 100</span>
         </div>
       </div>
 
+      {/* Verdict badge */}
+      <div className={`flex items-center justify-center gap-2 mt-4 px-4 py-2 rounded-lg border ${verdict.bg}`}>
+        <ShieldAlert className={`w-4 h-4 ${verdict.color}`} />
+        <span className={`text-xs font-mono font-extrabold tracking-widest ${verdict.color}`}>
+          {verdict.text}
+        </span>
+      </div>
+
       {/* Breakdown */}
-      <div className="w-full space-y-2">
+      <div className="mt-5 space-y-2.5">
         <MetricRow
-          label="Total Claims"
+          icon={<div className="w-2.5 h-2.5 rounded-full bg-foreground/60" />}
+          label="Total Claims Extracted"
           value={totalClaims}
           color="text-foreground"
         />
+        <div className="h-px bg-border" />
         <MetricRow
-          label="Verified"
+          icon={<ShieldCheck className="w-3.5 h-3.5 text-verified" />}
+          label="Verified by Source"
           value={verifiedClaims}
           color="text-verified"
-          icon="●"
         />
         <MetricRow
+          icon={<ShieldAlert className="w-3.5 h-3.5 text-destructive" />}
           label="Hallucinated"
           value={hallucinatedClaims}
           color="text-destructive"
-          icon="●"
+          bold
         />
         <MetricRow
+          icon={<ShieldQuestion className="w-3.5 h-3.5 text-warning" />}
           label="Unverifiable"
           value={unverifiableClaims}
           color="text-warning"
-          icon="●"
         />
       </div>
     </div>
@@ -105,22 +120,26 @@ const TrustScore = ({
 };
 
 const MetricRow = ({
+  icon,
   label,
   value,
   color,
-  icon,
+  bold,
 }: {
+  icon: React.ReactNode;
   label: string;
   value: number;
   color: string;
-  icon?: string;
+  bold?: boolean;
 }) => (
   <div className="flex items-center justify-between text-xs">
-    <span className="flex items-center gap-1.5 text-muted-foreground">
-      {icon && <span className={`text-[8px] ${color}`}>{icon}</span>}
+    <span className="flex items-center gap-2 text-muted-foreground">
+      {icon}
       {label}
     </span>
-    <span className={`font-mono font-semibold ${color}`}>{value}</span>
+    <span className={`font-mono font-bold ${color} ${bold ? "text-sm" : ""}`}>
+      {value}
+    </span>
   </div>
 );
 
