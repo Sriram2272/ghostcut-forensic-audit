@@ -10,6 +10,7 @@ import VerificationScopeBanner from "@/components/VerificationScopeBanner";
 import { AuditEmptyState } from "@/components/HighlightedText";
 import { MOCK_AUDIT_RESULT, computeWeightedTrustScore } from "@/lib/audit-types";
 import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2 } from "lucide-react";
+import { toast } from "sonner";
 
 type WorkspaceView = "split" | "graph";
 
@@ -37,12 +38,19 @@ const Index = () => {
     }, 2500);
   }, []);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
+    setLlmText("");
+    setFiles([]);
     setAuditComplete(false);
     setSelectedSentenceId(null);
     setShowStats(false);
     setWorkspaceView("split");
-  };
+    setAuditDurationMs(0);
+    auditStartRef.current = 0;
+    toast.success("New forensic audit initialized", {
+      description: "All previous sources, claim graphs, and verification results have been cleared. Context is fully isolated.",
+    });
+  }, []);
 
   const result = MOCK_AUDIT_RESULT;
   const weightedScore = useMemo(() => computeWeightedTrustScore(result.sentences), [result.sentences]);
