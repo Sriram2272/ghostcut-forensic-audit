@@ -19,6 +19,23 @@ export interface SourceConflictInfo {
   evidenceB: ConflictEvidence;
 }
 
+export interface CorrectionCitation {
+  documentName: string;
+  paragraphId: string;
+  excerpt: string; // short excerpt from the source used in this segment
+}
+
+export interface CorrectionSegment {
+  text: string;
+  citation?: CorrectionCitation; // if present, this segment is source-backed
+}
+
+export interface LockedCorrection {
+  segments: CorrectionSegment[];
+  sourceLockedNote: string; // explains that only source-present facts were used
+  removedContent?: string; // describes what was removed because no source supports it
+}
+
 export interface AuditSentence {
   id: string;
   text: string;
@@ -28,6 +45,7 @@ export interface AuditSentence {
   evidenceIds: string[]; // links to SourceParagraph ids
   severity?: SeverityInfo; // only present for contradicted claims
   sourceConflict?: SourceConflictInfo; // only present for source_conflict claims
+  correction?: LockedCorrection; // only present for contradicted claims
 }
 
 export interface SourceParagraph {
@@ -108,6 +126,30 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
         level: "moderate",
         reasoning: "Incorrect date on a regulatory filing. While the FDA clearance exists, the 14-month date discrepancy could mislead investors about the company's regulatory timeline and product maturity.",
       },
+      correction: {
+        segments: [
+          { text: "The company received FDA 510(k) clearance for its flagship product, NeuraScan, in " },
+          {
+            text: "March 2024",
+            citation: {
+              documentName: "regulatory-status-report.pdf",
+              paragraphId: "p2-3",
+              excerpt: "Date of Clearance: March 15, 2024",
+            },
+          },
+          { text: ", under clearance number " },
+          {
+            text: "K241892",
+            citation: {
+              documentName: "regulatory-status-report.pdf",
+              paragraphId: "p2-3",
+              excerpt: "Clearance Number: K241892",
+            },
+          },
+          { text: "." },
+        ],
+        sourceLockedNote: "Correction uses only facts from regulatory-status-report.pdf. The original date (January 2023) was replaced with the verified clearance date (March 15, 2024).",
+      },
     },
     {
       id: "s3",
@@ -130,6 +172,30 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
         level: "critical",
         reasoning: "Numeric financial fact inflated by 153%. ARR of $120M vs actual $47.3M constitutes material misrepresentation that could violate SEC regulations and mislead investors in due diligence.",
       },
+      correction: {
+        segments: [
+          { text: "In Q2 2025, Nextera Health reported annual recurring revenue of " },
+          {
+            text: "$47.3 million",
+            citation: {
+              documentName: "financial-disclosure-q2-2025.pdf",
+              paragraphId: "p4-2",
+              excerpt: "Annual Recurring Revenue (ARR): $47,300,000 (up 34% year-over-year)",
+            },
+          },
+          { text: ", representing " },
+          {
+            text: "34% year-over-year growth",
+            citation: {
+              documentName: "financial-disclosure-q2-2025.pdf",
+              paragraphId: "p4-2",
+              excerpt: "Annual Recurring Revenue (ARR): $47,300,000 (up 34% year-over-year)",
+            },
+          },
+          { text: "." },
+        ],
+        sourceLockedNote: "Correction uses only figures from financial-disclosure-q2-2025.pdf. The fabricated $120M ARR was replaced with the verified $47.3M figure.",
+      },
     },
     {
       id: "s5",
@@ -151,6 +217,39 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       severity: {
         level: "critical",
         reasoning: "Fabricated medical accuracy statistic for a cancer detection tool. Overstating diagnostic performance from 87% to 99.7% could lead to misplaced clinical trust and endanger patient lives.",
+      },
+      correction: {
+        segments: [
+          { text: "Clinical trials demonstrated " },
+          {
+            text: "87.3% sensitivity and 91.2% specificity",
+            citation: {
+              documentName: "technical-whitepaper-neurascan.pdf",
+              paragraphId: "p3-4",
+              excerpt: "Sensitivity for early-stage glioblastoma: 87.3% (95% CI: 84.1–90.5%) — Specificity: 91.2% (95% CI: 88.7–93.7%)",
+            },
+          },
+          { text: " in detecting early-stage glioblastoma, with an " },
+          {
+            text: "AUC of 0.934",
+            citation: {
+              documentName: "technical-whitepaper-neurascan.pdf",
+              paragraphId: "p3-4",
+              excerpt: "Area Under ROC Curve: 0.934",
+            },
+          },
+          { text: ", as a " },
+          {
+            text: "screening aid, not standalone diagnosis",
+            citation: {
+              documentName: "technical-whitepaper-neurascan.pdf",
+              paragraphId: "p3-4",
+              excerpt: "These results represent performance as a screening aid, not standalone diagnosis.",
+            },
+          },
+          { text: "." },
+        ],
+        sourceLockedNote: "Correction uses only results from the Phase III trial (NCT04892301) documented in technical-whitepaper-neurascan.pdf. The fabricated 99.7% accuracy was replaced with actual sensitivity/specificity metrics.",
       },
     },
     {
@@ -191,6 +290,22 @@ export const MOCK_AUDIT_RESULT: AuditResult = {
       severity: {
         level: "critical",
         reasoning: "Entirely fabricated institutional endorsement from the WHO — a global health authority. False claims of WHO backing for a medical device constitute fraud and could facilitate illegal market entry.",
+      },
+      correction: {
+        segments: [
+          { text: "The NeuraScan platform has active deployments at " },
+          {
+            text: "Mayo Clinic, Johns Hopkins Medicine, and Cleveland Clinic",
+            citation: {
+              documentName: "partnership-announcements.pdf",
+              paragraphId: "p5-1",
+              excerpt: "ACTIVE INSTITUTIONAL PARTNERSHIPS: Mayo Clinic, Johns Hopkins Medicine, Cleveland Clinic",
+            },
+          },
+          { text: "." },
+        ],
+        sourceLockedNote: "The WHO endorsement claim was entirely fabricated — no source document mentions any WHO involvement. The correction replaces this with verified institutional partnerships.",
+        removedContent: "WHO endorsement claim removed entirely. No source document contains any reference to the World Health Organization.",
       },
     },
     {
