@@ -5,9 +5,12 @@ import DocumentUpload from "@/components/DocumentUpload";
 import SentenceViewer from "@/components/SentenceViewer";
 import SourceViewer from "@/components/SourceViewer";
 import TrustScore from "@/components/TrustScore";
+import ClaimGraphView from "@/components/ClaimGraphView";
 import { AuditEmptyState } from "@/components/HighlightedText";
 import { MOCK_AUDIT_RESULT } from "@/lib/audit-types";
-import { RotateCcw, Scissors, BarChart3 } from "lucide-react";
+import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2 } from "lucide-react";
+
+type WorkspaceView = "split" | "graph";
 
 const Index = () => {
   const [llmText, setLlmText] = useState("");
@@ -16,6 +19,7 @@ const Index = () => {
   const [auditComplete, setAuditComplete] = useState(false);
   const [selectedSentenceId, setSelectedSentenceId] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("split");
 
   const canAudit = llmText.trim().length > 0 && files.length > 0;
 
@@ -32,6 +36,7 @@ const Index = () => {
     setAuditComplete(false);
     setSelectedSentenceId(null);
     setShowStats(false);
+    setWorkspaceView("split");
   };
 
   const result = MOCK_AUDIT_RESULT;
@@ -115,6 +120,23 @@ const Index = () => {
             {counts.contradicted} HALLUCINATION{counts.contradicted !== 1 ? "S" : ""} DETECTED
           </span>
         </div>
+
+        {/* View switcher */}
+        <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted border border-border">
+          <ViewTab
+            active={workspaceView === "split"}
+            onClick={() => setWorkspaceView("split")}
+            icon={<Columns2 className="w-3.5 h-3.5" />}
+            label="Audit"
+          />
+          <ViewTab
+            active={workspaceView === "graph"}
+            onClick={() => setWorkspaceView("graph")}
+            icon={<GitBranch className="w-3.5 h-3.5" />}
+            label="Graph"
+          />
+        </div>
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowStats(!showStats)}
@@ -130,27 +152,36 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Split screen workspace */}
+      {/* Main workspace content */}
       <div
         className="flex"
         style={{ height: "calc(100vh - 7.5rem)" }}
       >
-        {/* LEFT PANEL — Sentence Viewer */}
-        <div className="w-1/2 border-r-2 border-border overflow-hidden">
-          <SentenceViewer
-            sentences={result.sentences}
-            selectedId={selectedSentenceId}
-            onSelectSentence={setSelectedSentenceId}
-          />
-        </div>
+        {workspaceView === "split" ? (
+          <>
+            {/* LEFT PANEL — Sentence Viewer */}
+            <div className={`${showStats ? "w-[37.5%]" : "w-1/2"} border-r-2 border-border overflow-hidden`}>
+              <SentenceViewer
+                sentences={result.sentences}
+                selectedId={selectedSentenceId}
+                onSelectSentence={setSelectedSentenceId}
+              />
+            </div>
 
-        {/* RIGHT PANEL — Source Viewer */}
-        <div className={`${showStats ? "w-1/4" : "w-1/2"} overflow-hidden`}>
-          <SourceViewer
-            documents={result.documents}
-            selectedSentence={selectedSentence}
-          />
-        </div>
+            {/* RIGHT PANEL — Source Viewer */}
+            <div className={`${showStats ? "w-[37.5%]" : "w-1/2"} overflow-hidden`}>
+              <SourceViewer
+                documents={result.documents}
+                selectedSentence={selectedSentence}
+              />
+            </div>
+          </>
+        ) : (
+          /* GRAPH VIEW */
+          <div className={`${showStats ? "w-3/4" : "w-full"} overflow-hidden`}>
+            <ClaimGraphView sentences={result.sentences} />
+          </div>
+        )}
 
         {/* STATS PANEL (optional) */}
         {showStats && (
@@ -168,5 +199,29 @@ const Index = () => {
     </Layout>
   );
 };
+
+const ViewTab = ({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+      active
+        ? "bg-background border border-border text-foreground shadow-sm"
+        : "text-muted-foreground hover:text-foreground"
+    }`}
+  >
+    {icon}
+    {label}
+  </button>
+);
 
 export default Index;
