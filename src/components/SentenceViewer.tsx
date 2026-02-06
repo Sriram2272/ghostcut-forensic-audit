@@ -16,6 +16,7 @@ import {
 import type { AuditSentence, SentenceStatus, HallucinationSeverity } from "@/lib/audit-types";
 import VerificationPanel from "@/components/VerificationPanel";
 import RetrievedEvidenceTrail from "@/components/RetrievedEvidenceTrail";
+import InlineExplanation from "@/components/InlineExplanation";
 
 interface SentenceViewerProps {
   sentences: AuditSentence[];
@@ -265,6 +266,13 @@ const SentenceViewer = ({
                       </span>
                     )}
                   </div>
+
+                  {/* Inline explanation — always visible */}
+                  <InlineExplanation
+                    status={sentence.status}
+                    reasoning={sentence.reasoning}
+                    retrievedEvidence={sentence.retrievedEvidence}
+                  />
 
                   {/* Reasoning (visible when selected) */}
                   {isSelected && (
