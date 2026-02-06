@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef } from "react";
 import Layout from "@/components/Layout";
 import AuditInput from "@/components/AuditInput";
 import DocumentUpload from "@/components/DocumentUpload";
+import VerificationPolicy from "@/components/VerificationPolicy";
 import SentenceViewer from "@/components/SentenceViewer";
 import SourceViewer from "@/components/SourceViewer";
 import TrustDashboard from "@/components/TrustDashboard";
@@ -109,6 +110,7 @@ const Index = () => {
               <div className="p-5 rounded-xl bg-card border-2 border-border">
                 <DocumentUpload files={files} onFilesChange={setFiles} />
               </div>
+              <VerificationPolicy />
               <AuditEmptyState />
             </div>
           </div>
