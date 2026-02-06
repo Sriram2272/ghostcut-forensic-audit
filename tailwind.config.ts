@@ -52,6 +52,10 @@ export default {
           DEFAULT: "hsl(var(--conflict))",
           foreground: "hsl(var(--conflict-foreground))",
         },
+        uncertain: {
+          DEFAULT: "hsl(var(--uncertain))",
+          foreground: "hsl(var(--uncertain-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",

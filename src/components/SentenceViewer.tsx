@@ -14,6 +14,7 @@ import {
   Wrench,
 } from "lucide-react";
 import type { AuditSentence, SentenceStatus, HallucinationSeverity } from "@/lib/audit-types";
+import VerificationPanel from "@/components/VerificationPanel";
 
 interface SentenceViewerProps {
   sentences: AuditSentence[];
@@ -242,8 +243,17 @@ const SentenceViewer = ({
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider border cursor-help text-verified bg-verified/10 border-verified/30">
                         <Wrench className="w-3 h-3" />
                         FIX READY
+                    </span>
+                    )}
+
+                    {/* Verification disagreement badge */}
+                    {sentence.verification && !sentence.verification.consensus && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-extrabold tracking-wider border cursor-help text-[hsl(var(--uncertain))] bg-[hsl(var(--uncertain)/0.1)] border-[hsl(var(--uncertain)/0.3)]">
+                        <AlertTriangle className="w-3 h-3" />
+                        UNCERTAIN
                       </span>
                     )}
+
                     <span className="text-[10px] font-mono text-muted-foreground">
                       {(sentence.confidence * 100).toFixed(0)}%
                     </span>
@@ -292,6 +302,13 @@ const SentenceViewer = ({
                           <div className="text-[10px] font-mono text-muted-foreground">
                             ⬅ Click to view both sources side-by-side in the right panel
                           </div>
+                        </div>
+                      )}
+
+                      {/* Multi-Model Verification Panel */}
+                      {sentence.verification && (
+                        <div className="mt-3 pt-2 border-t border-border/30">
+                          <VerificationPanel verification={sentence.verification} />
                         </div>
                       )}
                     </div>

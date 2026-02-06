@@ -41,6 +41,8 @@
     --warning-foreground: 220 25% 10%;
     --conflict: 270 70% 55%;
     --conflict-foreground: 0 0% 100%;
+    --uncertain: 25 95% 55%;
+    --uncertain-foreground: 0 0% 100%;
 
     --border: 220 18% 86%;
     --input: 220 18% 88%;
@@ -108,6 +110,8 @@
     --warning-foreground: 230 25% 7%;
     --conflict: 270 85% 65%;
     --conflict-foreground: 0 0% 100%;
+    --uncertain: 25 100% 60%;
+    --uncertain-foreground: 230 25% 7%;
 
     --border: 230 16% 18%;
     --input: 230 16% 16%;
