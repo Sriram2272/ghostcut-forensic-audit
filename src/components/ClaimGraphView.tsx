@@ -71,8 +71,29 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [panViewStart, setPanViewStart] = useState({ x: 0, y: 0 });
   const [showLegend, setShowLegend] = useState(true);
+  const [focusCascade, setFocusCascade] = useState(false);
 
   const graph = useMemo(() => buildClaimGraph(sentences), [sentences]);
+
+  // Compute the set of node IDs that belong to a cascade path
+  const cascadePathIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const node of graph.nodes) {
+      if (node.effectiveStatus === "cascade" || node.effectiveStatus === "contradicted") {
+        ids.add(node.id);
+      }
+    }
+    // Also include direct upstream dependencies of cascade nodes to show full chain
+    for (const edge of graph.edges) {
+      if (edge.isCascade) {
+        ids.add(edge.from);
+        ids.add(edge.to);
+      }
+    }
+    return ids;
+  }, [graph]);
+
+  const hasCascadePath = cascadePathIds.size > 0;
 
   // Compute viewBox to fit all nodes with generous padding
   useEffect(() => {
@@ -173,6 +194,18 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
               {graph.nodes.length} claims • {graph.edges.length} dependencies
               {rootCauseCount > 0 && ` • ${rootCauseCount} root cause${rootCauseCount > 1 ? "s" : ""}`}
             </span>
+            {hasCascadePath && (
+              <button
+                onClick={() => setFocusCascade((v) => !v)}
+                className={`text-[10px] font-mono font-bold px-2 py-1 rounded border transition-colors ${
+                  focusCascade
+                    ? "border-destructive bg-destructive/15 text-destructive"
+                    : "border-border bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {focusCascade ? "✦ Cascade Focus ON" : "Focus Cascade"}
+              </button>
+            )}
             <button
               onClick={() => setShowLegend((v) => !v)}
               className="text-[10px] font-mono font-bold px-2 py-1 rounded border border-border bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -262,23 +295,22 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
               const dist = Math.sqrt(dx * dx + dy * dy);
               if (dist === 0) return null;
 
-              // Connect from right edge of source to left edge of target
               const x1 = fromNode.x + NODE_WIDTH / 2;
               const y1 = fromNode.y;
               const x2 = toNode.x - NODE_WIDTH / 2;
               const y2 = toNode.y;
 
-              // Smooth horizontal bezier curve
               const cpOffset = Math.abs(x2 - x1) * 0.4;
               const pathD = `M ${x1} ${y1} C ${x1 + cpOffset} ${y1}, ${x2 - cpOffset} ${y2}, ${x2} ${y2}`;
 
-              // Edge label at midpoint
               const labelX = (x1 + x2) / 2;
               const labelY = (y1 + y2) / 2 - 8;
 
+              // Dim non-cascade edges when focus mode is on
+              const isDimmed = focusCascade && !edge.isCascade;
+
               return (
-                <g key={`${edge.from}-${edge.to}`}>
-                  {/* Glow behind cascade edges */}
+                <g key={`${edge.from}-${edge.to}`} style={{ opacity: isDimmed ? 0.06 : 1, transition: "opacity 0.3s ease" }}>
                   {edge.isCascade && (
                     <path
                       d={pathD}
@@ -289,7 +321,6 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                       filter="url(#cascade-glow)"
                     />
                   )}
-                  {/* Main edge line */}
                   <path
                     d={pathD}
                     fill="none"
@@ -300,7 +331,6 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                     markerEnd={edge.isCascade ? "url(#arrow-cascade)" : "url(#arrow-normal)"}
                     className={edge.isCascade ? "cascade-edge" : ""}
                   />
-                  {/* Edge relation label */}
                   <text
                     x={labelX}
                     y={labelY}
@@ -328,6 +358,8 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
               const isCascade = node.effectiveStatus === "cascade";
               const isContradicted = node.effectiveStatus === "contradicted";
               const isDanger = isContradicted || isCascade;
+              const isInCascadePath = cascadePathIds.has(node.id);
+              const isDimmed = focusCascade && !isInCascadePath;
 
               return (
                 <g
@@ -337,6 +369,7 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                   onMouseLeave={() => handleNodeHover(null)}
                   onClick={() => handleNodeClick(node.id)}
                   className="cursor-pointer"
+                  style={{ opacity: isDimmed ? 0.12 : 1, transition: "opacity 0.3s ease" }}
                 >
                   {/* Subtle animated ring for danger nodes */}
                   {isDanger && (
