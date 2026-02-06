@@ -15,6 +15,7 @@ import type {
   SeverityInfo,
   HallucinationSeverity,
   LockedCorrection,
+  RetrievedEvidence,
 } from "@/lib/audit-types";
 import type { InMemoryVectorIndex, IngestedDocument, SearchResult } from "@/lib/document-pipeline";
 
@@ -122,6 +123,7 @@ interface ClaimVerification {
   confidence: number;
   reasoning: string;
   evidenceIds: string[];
+  retrievedEvidence: RetrievedEvidence[];
   topResults: SearchResult[];
   severity?: SeverityInfo;
   correction?: LockedCorrection;
@@ -215,12 +217,23 @@ function verifySingleClaim(
     reasoning = `Partial semantic match found (similarity: ${(topScore * 100).toFixed(1)}%), but insufficient evidence to confirm or deny this claim against the uploaded documents.`;
   }
 
-  // ═══ EVIDENCE IDs ═══
+  // ═══ EVIDENCE IDs + RETRIEVED EVIDENCE TRAIL ═══
 
   const evidenceIds = results
     .filter((r) => r.score > UNVERIFIABLE_THRESHOLD)
     .slice(0, 3)
     .map((r) => r.chunk.id);
+
+  const retrievedEvidence: RetrievedEvidence[] = results
+    .filter((r) => r.score > UNVERIFIABLE_THRESHOLD)
+    .slice(0, 5)
+    .map((r) => ({
+      chunkId: r.chunk.id,
+      documentName: r.chunk.documentName,
+      chunkText: r.chunk.text,
+      similarityScore: r.score,
+      chunkIndex: r.chunk.chunkIndex,
+    }));
 
   // ═══ SEVERITY (for contradicted claims) ═══
 
@@ -342,6 +355,7 @@ function verifySingleClaim(
     confidence,
     reasoning,
     evidenceIds,
+    retrievedEvidence,
     topResults: results,
     severity,
     correction,
@@ -381,6 +395,13 @@ export function runVerification(
   index: InMemoryVectorIndex,
   ingestedDocs: IngestedDocument[]
 ): AuditResult {
+  // ═══ HARD GUARD: Retrieval must be possible ═══
+  if (index.size === 0) {
+    throw new Error(
+      "Retrieval-Augmented Verification failed: vector index is empty. No document chunks were indexed. Upload source documents and re-run the audit."
+    );
+  }
+
   const sentenceTexts = splitIntoSentences(llmText);
 
   if (sentenceTexts.length === 0) {
@@ -392,7 +413,7 @@ export function runVerification(
     };
   }
 
-  // Verify each sentence
+  // Verify each sentence via retrieval
   const sentences: AuditSentence[] = [];
   const chunkToSentences = new Map<string, string[]>();
 
@@ -415,6 +436,7 @@ export function runVerification(
       confidence: result.confidence,
       reasoning: result.reasoning,
       evidenceIds: result.evidenceIds,
+      retrievedEvidence: result.retrievedEvidence,
       severity: result.severity,
       correction: result.correction,
       verification: result.verification,

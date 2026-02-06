@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { AuditSentence, SentenceStatus, HallucinationSeverity } from "@/lib/audit-types";
 import VerificationPanel from "@/components/VerificationPanel";
+import RetrievedEvidenceTrail from "@/components/RetrievedEvidenceTrail";
 
 interface SentenceViewerProps {
   sentences: AuditSentence[];
@@ -304,6 +305,12 @@ const SentenceViewer = ({
                           </div>
                         </div>
                       )}
+
+                      {/* Retrieved Evidence Trail */}
+                      <RetrievedEvidenceTrail
+                        evidence={sentence.retrievedEvidence}
+                        status={sentence.status}
+                      />
 
                       {/* Multi-Model Verification Panel */}
                       {sentence.verification && (
