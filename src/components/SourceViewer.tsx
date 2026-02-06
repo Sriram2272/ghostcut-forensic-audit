@@ -2,6 +2,7 @@ import { useRef, useEffect, useMemo } from "react";
 import { FileText, ChevronRight, GitCompareArrows, Wrench } from "lucide-react";
 import type { SourceDocument, AuditSentence } from "@/lib/audit-types";
 import CorrectionEngine from "@/components/CorrectionEngine";
+import VerificationScopeBanner from "@/components/VerificationScopeBanner";
 
 interface SourceViewerProps {
   documents: SourceDocument[];
@@ -161,6 +162,9 @@ const SourceViewer = ({ documents, selectedSentence }: SourceViewerProps) => {
       ) : (
         /* Standard document view */
         <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+          {/* Verification scope isolation banner */}
+          <VerificationScopeBanner documentCount={documents.length} variant="full" />
+
           {/* Correction Engine — shows for contradicted sentences with corrections */}
           {hasCorrection && selectedSentence.correction && (
             <div className="space-y-2">

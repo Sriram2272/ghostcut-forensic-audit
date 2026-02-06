@@ -6,6 +6,7 @@ import SentenceViewer from "@/components/SentenceViewer";
 import SourceViewer from "@/components/SourceViewer";
 import TrustDashboard from "@/components/TrustDashboard";
 import ClaimGraphView from "@/components/ClaimGraphView";
+import VerificationScopeBanner from "@/components/VerificationScopeBanner";
 import { AuditEmptyState } from "@/components/HighlightedText";
 import { MOCK_AUDIT_RESULT, computeWeightedTrustScore } from "@/lib/audit-types";
 import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2 } from "lucide-react";
@@ -122,9 +123,11 @@ const Index = () => {
             New Audit
           </button>
           <div className="h-4 w-px bg-border" />
-          <span className="text-[10px] font-mono text-destructive font-extrabold tracking-wider">
-            {counts.contradicted} HALLUCINATION{counts.contradicted !== 1 ? "S" : ""} DETECTED
-          </span>
+            <span className="text-[10px] font-mono text-destructive font-extrabold tracking-wider">
+              {counts.contradicted} HALLUCINATION{counts.contradicted !== 1 ? "S" : ""} DETECTED
+            </span>
+            <div className="h-4 w-px bg-border" />
+            <VerificationScopeBanner documentCount={result.documents.length} variant="compact" />
         </div>
 
         {/* View switcher */}

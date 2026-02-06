@@ -83,10 +83,13 @@ export interface SourceDocument {
   paragraphs: SourceParagraph[];
 }
 
+export type VerificationScope = "uploaded_documents_only";
+
 export interface AuditResult {
   sentences: AuditSentence[];
   documents: SourceDocument[];
   trustScore: number; // now computed dynamically via computeWeightedTrustScore
+  verificationScope: VerificationScope; // enforces strict source isolation
 }
 
 // ═══════════════════════════════════════════
@@ -126,6 +129,7 @@ export function computeWeightedTrustScore(sentences: AuditSentence[]): number {
 
 export const MOCK_AUDIT_RESULT: AuditResult = {
   trustScore: 33,
+  verificationScope: "uploaded_documents_only",
   sentences: [
     {
       id: "s1",
