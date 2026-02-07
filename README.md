@@ -1,73 +1,176 @@
-# Welcome to your Lovable project
+# 🔪 GHOSTCUT  
+### Cutting Hallucinations Out of AI
 
-## Project info
+🚀 **Live Demo:** https://sriramdama.in  
+👥 **Team:** AVENGERS  
+🏆 **Built for:** IIT Roorkee E-Summit Hackathon
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## 🧠 What is GHOSTCUT?
 
-There are several ways of editing your application.
+LLMs are smart.  
+LLMs are confident.  
+LLMs are also **sometimes confidently wrong**.
 
-**Use Lovable**
+**GHOSTCUT** is an **AI Auditor for AI-generated content**.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+It doesn’t *generate* text.  
+It **verifies**, **cross-checks**, and **cuts hallucinations** before they reach humans.
 
-Changes made via Lovable will be committed automatically to this repo.
+Think of it as:
+> 🔍 *A lie detector for AI outputs.*
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## ❌ The Problem
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Modern LLMs:
+- Hallucinate subtle facts
+- Mix correct and incorrect information
+- Provide no source traceability
+- Are dangerous in **healthcare, law, finance, and enterprise systems**
 
-Follow these steps:
+Manual verification:
+- Is slow
+- Is expensive
+- Does not scale
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+👉 **Trust is the real bottleneck for AI adoption.**
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## ✅ The Solution — GHOSTCUT
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+GHOSTCUT acts as a **verification layer** between AI outputs and users.
 
-**Edit a file directly in GitHub**
+It:
+- Breaks AI output into **atomic factual claims**
+- Verifies each claim **only against uploaded documents**
+- Classifies claims as:
+  - 🟢 Supported
+  - 🔴 Contradicted
+  - 🟡 No Direct Evidence Found
+- Explains **why**, **where**, and **how confident** each verdict is
+- Computes a **real, auditable Trust Score**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+No internet guessing.  
+No black-box answers.  
+No hallucination amplification.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## ⚙️ How It Works (High Level)
 
-## What technologies are used for this project?
+AI Output
+↓
+Claim Decomposition
+↓
+Evidence Retrieval (Document-Bounded)
+↓
+Claim Verification (NLI)
+↓
+Explainability + Trust Scoring
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Every step is **deterministic**, **auditable**, and **explainable**.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 🧩 Tech Stack (Verification-First Design)
 
-## Can I connect a custom domain to my Lovable project?
+### 🔍 NLP & ML Models
+- **Sentence-BERT (SBERT)**  
+  → Semantic retrieval of relevant document chunks
+- **TF-IDF (Classical NLP)**  
+  → Fast, deterministic first-pass filtering
+- **RoBERTa / DeBERTa (NLI Models)**  
+  → Claim–evidence entailment & contradiction detection
 
-Yes, you can!
+> ⚠️ No large generative models are used for verification.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### 🏗️ System Architecture
+- Stateless verification APIs
+- Modular pipeline:
+  - Claim Decomposition
+  - Retrieval
+  - Verification
+  - Explanation
+- **Chunk-level & claim-level caching**
+  → Faster re-audits, lower latency
+
+---
+
+## 📊 Key Features
+
+- 🎯 **Claim-Level Fact Checking**
+- 🔗 **Exact Evidence Citations**
+- 🧠 **Logical & Cascade Hallucination Detection**
+- 📉 **Math-Based Trust Score**
+- ⚠️ **Risk Classification (Low / Medium / High)**
+- 🧭 **Human-Readable Explainability**
+- 📊 **Interactive Dependency Graph**
+- 🌐 **Web App + WhatsApp Integration Ready**
+
+---
+
+## 💼 Real-World Use Cases
+
+- 🏥 Medical report auditing
+- ⚖️ Legal document verification
+- 💰 Financial & compliance checks
+- 🤖 AI copilots with guardrails
+- 🏢 Enterprise AI deployments
+
+If AI is used in **high-stakes decisions**, GHOSTCUT belongs there.
+
+---
+
+## 💰 Business & Scalability
+
+### Who Pays?
+- Enterprises using LLMs
+- Legal & compliance teams
+- Healthcare & FinTech companies
+- AI platform providers
+
+### Revenue Model
+- SaaS subscriptions
+- API-based usage pricing
+- Enterprise licensing
+- Messaging-platform (WhatsApp) integrations
+
+### Why It Scales
+- Low marginal compute cost
+- High trust value
+- Easy integration into existing AI pipelines
+
+---
+
+## 🌐 Live Demo
+
+👉 **Try it live:** https://sriramdama.in  
+
+Upload a document.  
+Paste AI output.  
+Watch hallucinations get **cut**.
+
+---
+
+## 🏁 Final Thought
+
+AI is powerful.  
+AI is fast.  
+But **AI without verification is dangerous**.
+
+> **If AI writes the future, GHOSTCUT verifies it.**
+
+---
+
+🔥 Built with logic, not vibes  
+🔥 Audited, not assumed  
+🔥 Hallucinations — terminated
+
+— **Team AVENGERS**
