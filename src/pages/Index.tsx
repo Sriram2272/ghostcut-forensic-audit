@@ -16,6 +16,8 @@ import type { AuditResult } from "@/lib/audit-types";
 import { ingestDocuments, InMemoryVectorIndex } from "@/lib/document-pipeline";
 import { runVerification } from "@/lib/verification-engine";
 import { generateAuditPDF } from "@/lib/pdf-export";
+import { generateAuditJSON, generateAuditCSV, generateAuditMarkdown } from "@/lib/json-export";
+import type { ExportFormat } from "@/components/ExportDropdown";
 import { useAuditHistory } from "@/hooks/use-audit-history";
 import { RotateCcw, Scissors, BarChart3, GitBranch, Columns2, GitCompareArrows, Save, Layers } from "lucide-react";
 import { toast } from "sonner";
@@ -49,14 +51,27 @@ const Index = () => {
 
   // ═══ HANDLERS ═══
 
-  const handleExportPDF = useCallback(() => {
+  const handleExport = useCallback((format: ExportFormat) => {
     if (!auditResult) {
       toast.error("No audit results to export.");
       return;
     }
     try {
-      generateAuditPDF(auditResult, auditDurationMs);
-      toast.success("PDF report generated", {
+      switch (format) {
+        case "pdf":
+          generateAuditPDF(auditResult, auditDurationMs);
+          break;
+        case "json":
+          generateAuditJSON(auditResult, auditDurationMs);
+          break;
+        case "csv":
+          generateAuditCSV(auditResult, auditDurationMs);
+          break;
+        case "markdown":
+          generateAuditMarkdown(auditResult, auditDurationMs);
+          break;
+      }
+      toast.success(`${format.toUpperCase()} report generated`, {
         description: "Forensic audit report downloaded successfully.",
       });
     } catch (err) {
@@ -356,7 +371,7 @@ const Index = () => {
 
   // ═══ WORKSPACE MODE ═══
   return (
-    <Layout onExportPDF={handleExportPDF} hasAuditResult>
+    <Layout onExport={handleExport} hasAuditResult>
       {/* Workspace toolbar */}
       <div className="border-b-2 border-border bg-card/50 backdrop-blur-sm px-4 sm:px-6 py-2 flex items-center justify-between">
         <div className="flex items-center gap-3">

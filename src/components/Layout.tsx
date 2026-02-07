@@ -1,18 +1,20 @@
 import { useState } from "react";
-import { Ghost, Settings, Download, Scissors, AlertTriangle } from "lucide-react";
+import { Ghost, Settings, Scissors, AlertTriangle } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import SettingsDialog from "./SettingsDialog";
+import ExportDropdown from "./ExportDropdown";
+import type { ExportFormat } from "./ExportDropdown";
 
 interface LayoutProps {
   children: React.ReactNode;
   onAudit?: () => void | Promise<void>;
   canAudit?: boolean;
   isAuditing?: boolean;
-  onExportPDF?: () => void;
+  onExport?: (format: ExportFormat) => void;
   hasAuditResult?: boolean;
 }
 
-const Layout = ({ children, onAudit, canAudit, isAuditing, onExportPDF, hasAuditResult }: LayoutProps) => {
+const Layout = ({ children, onAudit, canAudit, isAuditing, onExport, hasAuditResult }: LayoutProps) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -74,14 +76,10 @@ const Layout = ({ children, onAudit, canAudit, isAuditing, onExportPDF, hasAudit
 
           {/* RIGHT: Actions */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={onExportPDF}
+            <ExportDropdown
+              onExport={(fmt) => onExport?.(fmt)}
               disabled={!hasAuditResult}
-              className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Export PDF Report"
-            >
-              <Download className="w-4 h-4 text-muted-foreground" />
-            </button>
+            />
             <button
               onClick={() => setSettingsOpen(true)}
               className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center hover:bg-accent transition-colors"
