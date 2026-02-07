@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Ghost, Settings, Download, Scissors, AlertTriangle } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import SettingsDialog from "./SettingsDialog";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,8 @@ interface LayoutProps {
 }
 
 const Layout = ({ children, onAudit, canAudit, isAuditing, onExportPDF, hasAuditResult }: LayoutProps) => {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-background bg-grid-pattern">
       {/* Hazard accent line at very top */}
@@ -79,12 +83,14 @@ const Layout = ({ children, onAudit, canAudit, isAuditing, onExportPDF, hasAudit
               <Download className="w-4 h-4 text-muted-foreground" />
             </button>
             <button
+              onClick={() => setSettingsOpen(true)}
               className="w-9 h-9 rounded-lg bg-secondary border border-border flex items-center justify-center hover:bg-accent transition-colors"
               title="Settings"
             >
               <Settings className="w-4 h-4 text-muted-foreground" />
             </button>
             <ThemeToggle />
+            <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary border border-border ml-1">
               <span className="text-[10px] font-mono text-muted-foreground">TEAM</span>
               <span className="text-xs font-bold text-primary">AVENGERS</span>
