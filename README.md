@@ -21,7 +21,7 @@
 <p align="center">
   <a href="https://sriramdama.in"><img src="https://img.shields.io/badge/🚀_LIVE_DEMO-sriramdama.in-00ff88?style=for-the-badge&labelColor=0d1117" /></a>
   &nbsp;
-  <img src="https://img.shields.io/badge/👥_TEAM-AVENGERS-ff6b35?style=for-the-badge&labelColor=0d1117" />
+  <img src="https://img.shields.io/badge/👥_TEAM-BYTEFORCES-ff6b35?style=for-the-badge&labelColor=0d1117" />
   &nbsp;
   <img src="https://img.shields.io/badge/🏆_HACKATHON-IIT_ROORKEE_E--SUMMIT-7c3aed?style=for-the-badge&labelColor=0d1117" />
 </p>
@@ -525,7 +525,7 @@ npm run dev
   <img src="https://img.shields.io/badge/🔥_Hallucinations-TERMINATED-7c3aed?style=flat-square&labelColor=0a0a0a" />
 </p>
 
-<h3 align="center">— Team AVENGERS 🛡️</h3>
+<h3 align="center">— Team BYTEFORCES 🛡️</h3>
 
 <p align="center">
   <sub>🏆 Built for IIT Roorkee E-Summit Hackathon 2025</sub>

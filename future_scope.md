@@ -560,7 +560,7 @@ Apr 2025 ─── May 2025 ─── Jun 2025 ─── Jul 2025 ─── Aug 
   <img src="https://img.shields.io/badge/🚀_Vision-AI_Trust_Platform-7c3aed?style=flat-square&labelColor=0a0a0a" />
 </p>
 
-<h3 align="center">— Team AVENGERS 🛡️</h3>
+<h3 align="center">— Team BYTEFORCES 🛡️</h3>
 
 <p align="center">
   <sub>🏆 Heading to Finals @ IIT Delhi | April 10, 2025</sub>

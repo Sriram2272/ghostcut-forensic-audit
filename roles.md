@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/🔪_GHOSTCUT-Team_AVENGERS-ff0033?style=for-the-badge&labelColor=0a0a0a" />
+  <img src="https://img.shields.io/badge/🔪_GHOSTCUT-Team_BYTEFORCES-ff0033?style=for-the-badge&labelColor=0a0a0a" />
 </p>
 
-<h1 align="center">🛡️ Team AVENGERS — Roles & Contributions</h1>
+<h1 align="center">🛡️ Team BYTEFORCES — Roles & Contributions</h1>
 
 <h3 align="center">
   <code>IIT Delhi Hackathon 2025</code>
@@ -370,10 +370,10 @@ Week 1                    Week 2                    Week 3
 <p align="center">
   <img src="https://img.shields.io/badge/🔥_Equal_Effort-Shared_Victory-ff0033?style=flat-square&labelColor=0a0a0a" />
   &nbsp;
-  <img src="https://img.shields.io/badge/🛡️_Team_AVENGERS-United_Front-7c3aed?style=flat-square&labelColor=0a0a0a" />
+  <img src="https://img.shields.io/badge/🛡️_Team_BYTEFORCES-United_Front-7c3aed?style=flat-square&labelColor=0a0a0a" />
 </p>
 
-<h3 align="center">— Team AVENGERS 🛡️</h3>
+<h3 align="center">— Team BYTEFORCES 🛡️</h3>
 
 <p align="center">
   <sub>🏆 Built for IIT Delhi Hackathon 2025</sub>
