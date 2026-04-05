@@ -118,7 +118,78 @@ src/pages/Index.tsx                → Main application page
 
 <br/>
 
-## 🔬 Prajithaa Parani — `Core Developer & UI/UX Engineer`
+## 🔬 Prajithaa Parani — `Core Developer & Backend Engineer`
+
+<table>
+<tr>
+<td width="60%">
+
+### 🎯 Primary Responsibilities
+
+| Area | Contribution |
+|------|-------------|
+| ☁️ **Backend Architecture** | Co-designed the Lovable Cloud infrastructure — database schema, edge functions, API layer |
+| 🔗 **API Integration** | Integrated Gemini AI for claim decomposition, structured prompt engineering for reliable JSON outputs |
+| 📊 **Batch Audit System** | Built the batch audit panel — queue multiple LLM outputs against same source docs with comparison view |
+| 🕸️ **Dependency Graph Engine** | Implemented the interactive claim dependency graph with D3-style force layout and focus-on-cascade toggle |
+| 🔐 **Verification Policy Engine** | Built configurable verification policies — strict mode, depth levels, threshold controls |
+| 📋 **Audit History & Comparison** | Designed the audit history system with side-by-side comparison of previous audit results |
+| 🧠 **Evidence Trail System** | Built the retrieved evidence trail component — showing exact source passages with relevance scores |
+| 🛡️ **Error Handling & Edge Cases** | Implemented graceful error recovery, loading states, empty states, and fallback mechanisms |
+
+### 🛠️ Technologies Owned
+
+```
+TypeScript · Supabase Edge Functions · Deno · PostgreSQL
+Gemini AI API · TanStack React Query · React Router
+State Management · Error Boundaries · Performance Optimization
+```
+
+### 📁 Key Files Authored
+
+```
+src/components/BatchAuditPanel.tsx       → Multi-audit queue system
+src/components/AuditComparison.tsx       → Side-by-side audit comparison
+src/components/VerificationPanel.tsx     → Main verification interface
+src/components/VerificationPolicy.tsx    → Policy configuration engine
+src/components/RetrievedEvidenceTrail.tsx → Source evidence display
+src/components/CorrectionEngine.tsx      → Suggested corrections
+src/hooks/use-audit-history.ts           → Audit history state management
+src/lib/audit-types.ts                   → Type definitions & interfaces
+```
+
+</td>
+<td width="40%" valign="top">
+
+### 💡 Backend Contributions
+
+- ✅ Edge function architecture
+- ✅ Prompt engineering for Gemini
+- ✅ Batch processing pipeline
+- ✅ Audit data persistence
+- ✅ API error handling strategy
+- ✅ Performance optimization
+
+### 🧩 Algorithm Contributions
+
+| Algorithm | Purpose |
+|-----------|---------|
+| **Queue Processing** | Batch audit sequential execution |
+| **HashSet Lookups** | O(1) stop word filtering |
+| **Float64Array** | Memory-efficient vector math |
+| **Bézier Curves** | Smooth graph edge rendering |
+
+</td>
+</tr>
+</table>
+
+<br/>
+
+---
+
+<br/>
+
+## ⚡ Amith George — `Core Developer & UI/UX Engineer`
 
 <table>
 <tr>
@@ -190,77 +261,6 @@ src/index.css                        → Design system tokens
 
 <br/>
 
-## ⚡ Amith George — `Core Developer & Backend Engineer`
-
-<table>
-<tr>
-<td width="60%">
-
-### 🎯 Primary Responsibilities
-
-| Area | Contribution |
-|------|-------------|
-| ☁️ **Backend Architecture** | Co-designed the Lovable Cloud infrastructure — database schema, edge functions, API layer |
-| 🔗 **API Integration** | Integrated Gemini AI for claim decomposition, structured prompt engineering for reliable JSON outputs |
-| 📊 **Batch Audit System** | Built the batch audit panel — queue multiple LLM outputs against same source docs with comparison view |
-| 🕸️ **Dependency Graph Engine** | Implemented the interactive claim dependency graph with D3-style force layout and focus-on-cascade toggle |
-| 🔐 **Verification Policy Engine** | Built configurable verification policies — strict mode, depth levels, threshold controls |
-| 📋 **Audit History & Comparison** | Designed the audit history system with side-by-side comparison of previous audit results |
-| 🧠 **Evidence Trail System** | Built the retrieved evidence trail component — showing exact source passages with relevance scores |
-| 🛡️ **Error Handling & Edge Cases** | Implemented graceful error recovery, loading states, empty states, and fallback mechanisms |
-
-### 🛠️ Technologies Owned
-
-```
-TypeScript · Supabase Edge Functions · Deno · PostgreSQL
-Gemini AI API · TanStack React Query · React Router
-State Management · Error Boundaries · Performance Optimization
-```
-
-### 📁 Key Files Authored
-
-```
-src/components/BatchAuditPanel.tsx       → Multi-audit queue system
-src/components/AuditComparison.tsx       → Side-by-side audit comparison
-src/components/VerificationPanel.tsx     → Main verification interface
-src/components/VerificationPolicy.tsx    → Policy configuration engine
-src/components/RetrievedEvidenceTrail.tsx → Source evidence display
-src/components/CorrectionEngine.tsx      → Suggested corrections
-src/hooks/use-audit-history.ts           → Audit history state management
-src/lib/audit-types.ts                   → Type definitions & interfaces
-```
-
-</td>
-<td width="40%" valign="top">
-
-### 💡 Backend Contributions
-
-- ✅ Edge function architecture
-- ✅ Prompt engineering for Gemini
-- ✅ Batch processing pipeline
-- ✅ Audit data persistence
-- ✅ API error handling strategy
-- ✅ Performance optimization
-
-### 🧩 Algorithm Contributions
-
-| Algorithm | Purpose |
-|-----------|---------|
-| **Queue Processing** | Batch audit sequential execution |
-| **HashSet Lookups** | O(1) stop word filtering |
-| **Float64Array** | Memory-efficient vector math |
-| **Bézier Curves** | Smooth graph edge rendering |
-
-</td>
-</tr>
-</table>
-
-<br/>
-
----
-
-<br/>
-
 ## 🔄 Collaboration Matrix
 
 > **Every member contributed across the full stack.** The table below shows the primary ownership distribution.
@@ -271,14 +271,14 @@ src/lib/audit-types.ts                   → Type definitions & interfaces
 │                          │  ⭐ Lead  │           │           │
 ├──────────────────────────┼───────────┼───────────┼───────────┤
 │ System Architecture      │  ████████ │  ██████   │  ██████   │
-│ AI/NLP Pipeline          │  ████████ │  ████     │  ██████   │
-│ Frontend Components      │  ██████   │  ████████ │  ██████   │
-│ UI/UX Design System      │  ████     │  ████████ │  ████     │
-│ Backend / Edge Functions  │  ████████ │  ████     │  ████████ │
-│ Data Visualization       │  ██████   │  ████████ │  ████     │
-│ Export & Reports          │  ████     │  ████████ │  ██████   │
+│ AI/NLP Pipeline          │  ████████ │  ██████   │  ████     │
+│ Frontend Components      │  ██████   │  ██████   │  ████████ │
+│ UI/UX Design System      │  ████     │  ████     │  ████████ │
+│ Backend / Edge Functions  │  ████████ │  ████████ │  ████     │
+│ Data Visualization       │  ██████   │  ████     │  ████████ │
+│ Export & Reports          │  ████     │  ██████   │  ████████ │
 │ Testing & QA             │  ██████   │  ██████   │  ██████   │
-│ Deployment & DevOps      │  ████████ │  ████     │  ██████   │
+│ Deployment & DevOps      │  ████████ │  ██████   │  ████     │
 │ Documentation            │  ████████ │  ██████   │  ██████   │
 ├──────────────────────────┼───────────┼───────────┼───────────┤
 │ OVERALL CONTRIBUTION     │  ~38%     │  ~31%     │  ~31%     │
