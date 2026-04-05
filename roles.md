@@ -271,14 +271,14 @@ src/index.css                        → Design system tokens
 │                          │  ⭐ Lead  │           │           │
 ├──────────────────────────┼───────────┼───────────┼───────────┤
 │ System Architecture      │  ████████ │  ██████   │  ██████   │
-│ AI/NLP Pipeline          │  ████████ │  ████     │  ██████   │
-│ Frontend Components      │  ██████   │  ████████ │  ██████   │
-│ UI/UX Design System      │  ████     │  ████████ │  ████     │
-│ Backend / Edge Functions  │  ████████ │  ████     │  ████████ │
-│ Data Visualization       │  ██████   │  ████████ │  ████     │
-│ Export & Reports          │  ████     │  ████████ │  ██████   │
+│ AI/NLP Pipeline          │  ████████ │  ██████   │  ████     │
+│ Frontend Components      │  ██████   │  ██████   │  ████████ │
+│ UI/UX Design System      │  ████     │  ████     │  ████████ │
+│ Backend / Edge Functions  │  ████████ │  ████████ │  ████     │
+│ Data Visualization       │  ██████   │  ████     │  ████████ │
+│ Export & Reports          │  ████     │  ██████   │  ████████ │
 │ Testing & QA             │  ██████   │  ██████   │  ██████   │
-│ Deployment & DevOps      │  ████████ │  ████     │  ██████   │
+│ Deployment & DevOps      │  ████████ │  ██████   │  ████     │
 │ Documentation            │  ████████ │  ██████   │  ██████   │
 ├──────────────────────────┼───────────┼───────────┼───────────┤
 │ OVERALL CONTRIBUTION     │  ~38%     │  ~31%     │  ~31%     │
