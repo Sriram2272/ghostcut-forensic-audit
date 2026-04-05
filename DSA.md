@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Algorithms-12+-blueviolet?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Data_Structures-8+-blue?style=for-the-badge" />
   <img src="https://img.shields.io/badge/Complexity-Analyzed-green?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Team-AVENGERS-red?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Team-BYTEFORCES-red?style=for-the-badge" />
 </p>
 
 ---
@@ -1113,7 +1113,7 @@ const pathD = `M ${x1} ${y1} C ${x1 + cpOffset} ${y1}, ${x2 - cpOffset} ${y2}, $
 ---
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Built_by-Team_AVENGERS-red?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Built_by-Team_BYTEFORCES-red?style=for-the-badge" />
   <br/><br/>
   <b>Every algorithm was chosen with purpose. Every data structure was selected for performance.</b><br/>
   <sub>GHOSTCUT doesn't guess — it computes.</sub>
@@ -1123,5 +1123,5 @@ const pathD = `M ${x1} ${y1} C ${x1 + cpOffset} ${y1}, ${x2 - cpOffset} ${y2}, $
 
 <p align="center">
   <sub>📚 This document covers algorithms implemented in the GHOSTCUT codebase as of March 2026.</sub><br/>
-  <sub>Built for IIT Roorkee E-Summit Hackathon • Team AVENGERS</sub>
+  <sub>Built for IIT Roorkee E-Summit Hackathon • Team BYTEFORCES</sub>
 </p>
