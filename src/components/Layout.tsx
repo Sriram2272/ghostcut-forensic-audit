@@ -91,7 +91,7 @@ const Layout = ({ children, onAudit, canAudit, isAuditing, onExport, hasAuditRes
             <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary border border-border ml-1">
               <span className="text-[10px] font-mono text-muted-foreground">TEAM</span>
-              <span className="text-xs font-bold text-primary">AVENGERS</span>
+              <span className="text-xs font-bold text-primary">BYTEFORCES</span>
             </div>
           </div>
         </div>
