@@ -19,6 +19,7 @@ import type {
   RetrievedEvidence,
   ConfidenceRange,
 } from "@/lib/audit-types";
+import { computeWeightedTrustScore } from "@/lib/audit-types";
 import type { InMemoryVectorIndex, IngestedDocument, SearchResult } from "@/lib/document-pipeline";
 import { supabase } from "@/integrations/supabase/client";
 
