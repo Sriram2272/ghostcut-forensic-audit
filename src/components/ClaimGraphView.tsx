@@ -438,21 +438,30 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                     }}
                   />
 
-                  {/* Short claim title — 3-5 words, centered, readable */}
-                  <text
-                    x={node.x}
-                    y={node.y}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill={colors.text}
-                    fontSize="11"
-                    fontWeight="600"
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                    letterSpacing="0.2"
-                    style={{ pointerEvents: "none" }}
-                  >
-                    {node.shortSummary}
-                  </text>
+                  {/* Short claim title — wrapped, centered, readable */}
+                  {(() => {
+                    const lines = wrapText(node.shortSummary, 28);
+                    const lineHeight = 14;
+                    const totalHeight = lines.length * lineHeight;
+                    const startY = node.y - totalHeight / 2 + lineHeight / 2 + 4;
+                    return lines.map((line, li) => (
+                      <text
+                        key={li}
+                        x={node.x}
+                        y={startY + li * lineHeight}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill={colors.text}
+                        fontSize="12"
+                        fontWeight="600"
+                        fontFamily="system-ui, -apple-system, sans-serif"
+                        letterSpacing="0.2"
+                        style={{ pointerEvents: "none" }}
+                      >
+                        {line}
+                      </text>
+                    ));
+                  })()}
 
                   {/* Claim ID in top-left corner */}
                   <text
