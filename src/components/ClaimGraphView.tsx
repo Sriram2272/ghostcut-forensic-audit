@@ -298,11 +298,27 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                 .cascade-edge {
                   animation: dash-flow 1s linear infinite;
                 }
+                @keyframes node-enter {
+                  0% { opacity: 0; transform: translateY(18px) scale(0.92); }
+                  100% { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                @keyframes edge-draw {
+                  0% { opacity: 0; stroke-dashoffset: 200; }
+                  100% { opacity: 1; stroke-dashoffset: 0; }
+                }
+                .graph-node-enter {
+                  animation: node-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                  opacity: 0;
+                }
+                .graph-edge-enter {
+                  animation: edge-draw 0.4s ease-out forwards;
+                  opacity: 0;
+                }
               `}</style>
             </defs>
 
             {/* ── EDGES ── */}
-            {graph.edges.map((edge) => {
+            {graph.edges.map((edge, edgeIdx) => {
               const fromNode = graph.nodes.find((n) => n.id === edge.from);
               const toNode = graph.nodes.find((n) => n.id === edge.to);
               if (!fromNode || !toNode) return null;
@@ -325,9 +341,18 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
 
               // Dim non-cascade edges when focus mode is on
               const isDimmed = focusCascade && !edge.isCascade;
+              const edgeDelay = 0.3 + edgeIdx * 0.06;
 
               return (
-                <g key={`${edge.from}-${edge.to}`} style={{ opacity: isDimmed ? 0.06 : 1, transition: "opacity 0.3s ease" }}>
+                <g
+                  key={`${edge.from}-${edge.to}`}
+                  className="graph-edge-enter"
+                  style={{
+                    opacity: isDimmed ? 0.06 : undefined,
+                    transition: "opacity 0.3s ease",
+                    animationDelay: `${edgeDelay}s`,
+                  }}
+                >
                   {edge.isCascade && (
                     <path
                       d={pathD}
@@ -368,7 +393,7 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
             })}
 
             {/* ── NODES ── */}
-            {graph.nodes.map((node) => {
+            {graph.nodes.map((node, nodeIdx) => {
               const colors = STATUS_COLORS[node.effectiveStatus];
               const isHovered = hoveredNode === node.id;
               const isSelected = selectedNode === node.id;
@@ -377,6 +402,7 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
               const isDanger = isContradicted || isCascade;
               const isInCascadePath = cascadePathIds.has(node.id);
               const isDimmed = focusCascade && !isInCascadePath;
+              const nodeDelay = nodeIdx * 0.08;
 
               return (
                 <g
@@ -385,8 +411,12 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                   onMouseMove={(e) => handleNodeHover(node.id, e)}
                   onMouseLeave={() => handleNodeHover(null)}
                   onClick={() => handleNodeClick(node.id)}
-                  className="cursor-pointer"
-                  style={{ opacity: isDimmed ? 0.12 : 1, transition: "opacity 0.3s ease" }}
+                  className="cursor-pointer graph-node-enter"
+                  style={{
+                    opacity: isDimmed ? 0.12 : undefined,
+                    transition: "opacity 0.3s ease",
+                    animationDelay: `${nodeDelay}s`,
+                  }}
                 >
                   {/* Subtle animated ring for danger nodes */}
                   {isDanger && (
