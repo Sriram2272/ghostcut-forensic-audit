@@ -317,16 +317,10 @@ export async function runVerification(
     })),
   }));
 
-  // 3. Call AI model for real verification (batched)
-  const BATCH_SIZE = 5;
-  const modelResults: (ModelVerdict | { error: string })[] = [];
-
-  for (let i = 0; i < modelRequests.length; i += BATCH_SIZE) {
-    const batch = modelRequests.slice(i, i + BATCH_SIZE);
-    const batchResults = await callVerificationModel(batch);
-    modelResults.push(...batchResults);
-    onProgress?.(Math.min(modelResults.length, sentenceTexts.length), sentenceTexts.length);
-  }
+  // 3. Call AI model for real verification — send ALL claims in one batch
+  onProgress?.(0, sentenceTexts.length);
+  const modelResults = await callVerificationModel(modelRequests);
+  onProgress?.(sentenceTexts.length, sentenceTexts.length);
 
   // 4. Assemble sentences with model results
   const sentences: AuditSentence[] = [];
