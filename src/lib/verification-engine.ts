@@ -19,6 +19,7 @@ import type {
   RetrievedEvidence,
   ConfidenceRange,
 } from "@/lib/audit-types";
+import { computeWeightedTrustScore } from "@/lib/audit-types";
 import type { InMemoryVectorIndex, IngestedDocument, SearchResult } from "@/lib/document-pipeline";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -488,7 +489,7 @@ export async function runVerification(
   return {
     sentences,
     documents,
-    trustScore: 0,
+    trustScore: computeWeightedTrustScore(sentences),
     verificationScope: "uploaded_documents_only",
   };
 }
