@@ -111,7 +111,7 @@ export interface AuditResult {
 
 // ═══════════════════════════════════════════
 // STRICTLY COMPUTED TRUST SCORE
-// Formula: 100 - (Contradicted% × 1.5) - (Unverifiable% × 0.5)
+// Formula: 100 - (Contradicted% × 1.0) - (Unverifiable% × 0.5)
 // Clamped between 0 and 100.
 // ═══════════════════════════════════════════
 
@@ -170,7 +170,7 @@ function computeExactPercentages(
 
 /**
  * Compute trust score using the strict formula:
- * Trust Score = 100 - (Contradicted% × 1.5) - (Unverifiable% × 0.5)
+ * Trust Score = 100 - (Contradicted% × 1.0) - (Unverifiable% × 0.5)
  * Clamped between 0 and 100.
  */
 export function computeWeightedTrustScore(sentences: AuditSentence[]): number {
@@ -214,8 +214,8 @@ export function computeStrictAuditStats(sentences: AuditSentence[]): StrictAudit
   const exactContradictedPct = (contradicted / total) * 100;
   const exactUnverifiablePct = (unverifiable / total) * 100;
 
-  // Trust Score = 100 - (Contradicted% × 1.5) - (Unverifiable% × 0.5)
-  const rawScore = 100 - (exactContradictedPct * 1.5) - (exactUnverifiablePct * 0.5);
+  // Trust Score = 100 - (Contradicted% × 1.0) - (Unverifiable% × 0.5)
+  const rawScore = 100 - exactContradictedPct - (exactUnverifiablePct * 0.5);
   const trustScore = Math.round(Math.max(0, Math.min(100, rawScore)));
 
   // Check for any CRITICAL severity contradiction

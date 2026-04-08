@@ -94,13 +94,13 @@ export function generateAuditPDF(auditResult: AuditResult, auditDurationMs: numb
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text("Score = 100 − (Contradicted% × 1.5) − (Unverifiable% × 0.5), clamped [0, 100]", margin, y);
+  doc.text("Score = 100 − (Contradicted% × 1.0) − (Unverifiable% × 0.5), clamped [0, 100]", margin, y);
   y += 4;
 
   const exactContradictedPct = stats.total > 0 ? (stats.contradicted / stats.total) * 100 : 0;
   const exactUnverifiablePct = stats.total > 0 ? (stats.unverifiable / stats.total) * 100 : 0;
   doc.text(
-    `= 100 − (${exactContradictedPct.toFixed(1)}% × 1.5) − (${exactUnverifiablePct.toFixed(1)}% × 0.5) = ${stats.trustScore}`,
+    `= 100 − (${exactContradictedPct.toFixed(1)}% × 1.0) − (${exactUnverifiablePct.toFixed(1)}% × 0.5) = ${stats.trustScore}`,
     margin,
     y
   );
