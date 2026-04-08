@@ -73,9 +73,34 @@ const TrustDashboard = ({ sentences, auditDurationMs }: TrustDashboardProps) => 
     return `${(auditDurationMs / 1000).toFixed(1)}s`;
   }, [auditDurationMs]);
 
-  // Score gauge
+  // Animated score gauge
   const circumference = 2 * Math.PI * 54;
-  const strokeDashoffset = circumference - (stats.trustScore / 100) * circumference;
+  const targetOffset = circumference - (stats.trustScore / 100) * circumference;
+  const [animatedOffset, setAnimatedOffset] = useState(circumference);
+  const [animatedScore, setAnimatedScore] = useState(0);
+
+  useEffect(() => {
+    // Delay slightly so the initial render shows empty gauge
+    const timer = setTimeout(() => {
+      setAnimatedOffset(targetOffset);
+    }, 100);
+
+    // Animate the number counting up
+    const duration = 1200;
+    const startTime = Date.now() + 100;
+    const target = stats.trustScore;
+    const frame = () => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 0) { requestAnimationFrame(frame); return; }
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setAnimatedScore(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+
+    return () => clearTimeout(timer);
+  }, [targetOffset, stats.trustScore]);
 
   const getStrokeColor = () => {
     if (stats.trustScore >= 80) return "hsl(var(--verified))";
