@@ -367,11 +367,11 @@ const FormulaExplanation = () => (
       <p className="font-extrabold text-foreground tracking-wider uppercase mb-1">Trust Score Formula</p>
       <div className="px-2 py-1.5 rounded bg-muted border border-border">
         <code className="text-[9px] text-primary">
-          Score = 100 − (Contradicted% × 1.5) − (Unverifiable% × 0.5)
+          Score = 100 − (Contradicted% × 1.0) − (Unverifiable% × 0.5)
         </code>
       </div>
       <p className="text-muted-foreground mt-1 leading-relaxed">
-        Clamped between 0 and 100. Contradictions penalized 3× more than unverifiable claims.
+        Clamped between 0 and 100. Contradictions are weighted more heavily than unverifiable claims.
       </p>
     </div>
     <div>
