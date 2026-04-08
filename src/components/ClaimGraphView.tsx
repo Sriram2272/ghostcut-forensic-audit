@@ -56,9 +56,26 @@ const EDGE_RELATION_LABELS: Record<EdgeRelation, string> = {
 };
 
 // Larger pill-shaped nodes with generous padding
-const NODE_WIDTH = 200;
-const NODE_HEIGHT = 64;
-const NODE_RX = 14;
+const NODE_WIDTH = 260;
+const NODE_HEIGHT = 80;
+const NODE_RX = 16;
+
+/** Break text into lines that fit within a given character width */
+function wrapText(text: string, maxCharsPerLine: number): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    if (current && (current.length + 1 + word.length) > maxCharsPerLine) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = current ? current + " " + word : word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.slice(0, 3); // max 3 lines
+}
 
 const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
