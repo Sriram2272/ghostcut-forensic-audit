@@ -488,7 +488,7 @@ export async function runVerification(
   return {
     sentences,
     documents,
-    trustScore: 0,
+    trustScore: computeWeightedTrustScore(sentences),
     verificationScope: "uploaded_documents_only",
   };
 }
