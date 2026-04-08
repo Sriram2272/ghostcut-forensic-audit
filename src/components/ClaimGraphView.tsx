@@ -393,7 +393,7 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
             })}
 
             {/* ── NODES ── */}
-            {graph.nodes.map((node) => {
+            {graph.nodes.map((node, nodeIdx) => {
               const colors = STATUS_COLORS[node.effectiveStatus];
               const isHovered = hoveredNode === node.id;
               const isSelected = selectedNode === node.id;
@@ -402,6 +402,7 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
               const isDanger = isContradicted || isCascade;
               const isInCascadePath = cascadePathIds.has(node.id);
               const isDimmed = focusCascade && !isInCascadePath;
+              const nodeDelay = nodeIdx * 0.08;
 
               return (
                 <g
@@ -410,8 +411,12 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                   onMouseMove={(e) => handleNodeHover(node.id, e)}
                   onMouseLeave={() => handleNodeHover(null)}
                   onClick={() => handleNodeClick(node.id)}
-                  className="cursor-pointer"
-                  style={{ opacity: isDimmed ? 0.12 : 1, transition: "opacity 0.3s ease" }}
+                  className="cursor-pointer graph-node-enter"
+                  style={{
+                    opacity: isDimmed ? 0.12 : undefined,
+                    transition: "opacity 0.3s ease",
+                    animationDelay: `${nodeDelay}s`,
+                  }}
                 >
                   {/* Subtle animated ring for danger nodes */}
                   {isDanger && (
