@@ -160,8 +160,8 @@ const TrustDashboard = ({ sentences, auditDurationMs }: TrustDashboardProps) => 
               strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-1000 ease-out"
+              strokeDashoffset={animatedOffset}
+              className="transition-[stroke-dashoffset] duration-[1200ms] ease-out"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
