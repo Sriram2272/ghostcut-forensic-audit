@@ -117,15 +117,15 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
     if (graph.nodes.length === 0) return;
     const xs = graph.nodes.map((n) => n.x);
     const ys = graph.nodes.map((n) => n.y);
-    const minX = Math.min(...xs) - 160;
-    const maxX = Math.max(...xs) + 160;
-    const minY = Math.min(...ys) - 100;
-    const maxY = Math.max(...ys) + 100;
+    const minX = Math.min(...xs) - 220;
+    const maxX = Math.max(...xs) + 220;
+    const minY = Math.min(...ys) - 140;
+    const maxY = Math.max(...ys) + 140;
     setViewBox({
       x: minX,
       y: minY,
-      w: Math.max(maxX - minX, 600),
-      h: Math.max(maxY - minY, 400),
+      w: Math.max(maxX - minX, 800),
+      h: Math.max(maxY - minY, 500),
     });
   }, [graph]);
 
