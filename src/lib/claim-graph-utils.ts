@@ -58,16 +58,13 @@ const DEPENDENCY_MAP: Record<string, string[]> = {
  */
 function generateShortSummary(text: string): string {
   const cleaned = text.replace(/["""]/g, "").trim();
-  // Try to extract a concise subject-verb phrase
-  // Remove leading filler like "The company", "According to"
   const simplified = cleaned
     .replace(/^(According to[^,]*,\s*)/i, "")
     .replace(/^(The\s+)/i, "")
     .replace(/^(It\s+is\s+)/i, "");
   const words = simplified.split(/\s+/);
-  if (words.length <= 5) return simplified;
-  // Take first 4-5 words, ensuring we end on a whole word
-  return words.slice(0, 4).join(" ");
+  if (words.length <= 8) return simplified;
+  return words.slice(0, 7).join(" ") + "…";
 }
 
 /**
@@ -187,10 +184,10 @@ export function buildClaimGraph(sentences: AuditSentence[]): ClaimGraph {
   }
 
   // Assign positions — generous spacing for readability
-  const PADDING_X = 300;
-  const PADDING_Y = 130;
-  const OFFSET_X = 140;
-  const OFFSET_Y = 60;
+  const PADDING_X = 380;
+  const PADDING_Y = 160;
+  const OFFSET_X = 180;
+  const OFFSET_Y = 80;
 
   for (let depth = 0; depth <= maxDepth; depth++) {
     const group = byDepth.get(depth) || [];

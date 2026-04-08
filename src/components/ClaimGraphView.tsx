@@ -56,9 +56,26 @@ const EDGE_RELATION_LABELS: Record<EdgeRelation, string> = {
 };
 
 // Larger pill-shaped nodes with generous padding
-const NODE_WIDTH = 200;
-const NODE_HEIGHT = 64;
-const NODE_RX = 14;
+const NODE_WIDTH = 260;
+const NODE_HEIGHT = 80;
+const NODE_RX = 16;
+
+/** Break text into lines that fit within a given character width */
+function wrapText(text: string, maxCharsPerLine: number): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    if (current && (current.length + 1 + word.length) > maxCharsPerLine) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = current ? current + " " + word : word;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.slice(0, 3); // max 3 lines
+}
 
 const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -100,15 +117,15 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
     if (graph.nodes.length === 0) return;
     const xs = graph.nodes.map((n) => n.x);
     const ys = graph.nodes.map((n) => n.y);
-    const minX = Math.min(...xs) - 160;
-    const maxX = Math.max(...xs) + 160;
-    const minY = Math.min(...ys) - 100;
-    const maxY = Math.max(...ys) + 100;
+    const minX = Math.min(...xs) - 220;
+    const maxX = Math.max(...xs) + 220;
+    const minY = Math.min(...ys) - 140;
+    const maxY = Math.max(...ys) + 140;
     setViewBox({
       x: minX,
       y: minY,
-      w: Math.max(maxX - minX, 600),
-      h: Math.max(maxY - minY, 400),
+      w: Math.max(maxX - minX, 800),
+      h: Math.max(maxY - minY, 500),
     });
   }, [graph]);
 
@@ -421,21 +438,30 @@ const ClaimGraphView = ({ sentences }: ClaimGraphViewProps) => {
                     }}
                   />
 
-                  {/* Short claim title — 3-5 words, centered, readable */}
-                  <text
-                    x={node.x}
-                    y={node.y}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill={colors.text}
-                    fontSize="11"
-                    fontWeight="600"
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                    letterSpacing="0.2"
-                    style={{ pointerEvents: "none" }}
-                  >
-                    {node.shortSummary}
-                  </text>
+                  {/* Short claim title — wrapped, centered, readable */}
+                  {(() => {
+                    const lines = wrapText(node.shortSummary, 28);
+                    const lineHeight = 14;
+                    const totalHeight = lines.length * lineHeight;
+                    const startY = node.y - totalHeight / 2 + lineHeight / 2 + 4;
+                    return lines.map((line, li) => (
+                      <text
+                        key={li}
+                        x={node.x}
+                        y={startY + li * lineHeight}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill={colors.text}
+                        fontSize="12"
+                        fontWeight="600"
+                        fontFamily="system-ui, -apple-system, sans-serif"
+                        letterSpacing="0.2"
+                        style={{ pointerEvents: "none" }}
+                      >
+                        {line}
+                      </text>
+                    ));
+                  })()}
 
                   {/* Claim ID in top-left corner */}
                   <text
