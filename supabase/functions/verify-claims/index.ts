@@ -56,20 +56,10 @@ serve(async (req) => {
       );
     }
 
-    const BATCH_SIZE = 3;
-    const results: (VerificationResult | { error: string })[] = [];
-
-    for (let i = 0; i < claims.length; i += BATCH_SIZE) {
-      const batch = claims.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.all(
-        batch.map((claim) => verifySingleClaim(claim, LOVABLE_API_KEY))
-      );
-      results.push(...batchResults);
-
-      if (i + BATCH_SIZE < claims.length) {
-        await new Promise((r) => setTimeout(r, 500));
-      }
-    }
+    // Process ALL claims in parallel for maximum speed
+    const results = await Promise.all(
+      claims.map((claim) => verifySingleClaim(claim, LOVABLE_API_KEY))
+    );
 
     return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
