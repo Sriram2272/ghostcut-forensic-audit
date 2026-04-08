@@ -166,7 +166,7 @@ const TrustDashboard = ({ sentences, auditDurationMs }: TrustDashboardProps) => 
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className={`text-3xl font-extrabold font-mono ${getScoreColor()}`}>
-              {stats.trustScore}
+              {animatedScore}
             </span>
             <span className="text-[9px] text-muted-foreground font-mono mt-0.5">/ 100</span>
           </div>
